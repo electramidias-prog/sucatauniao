@@ -8,6 +8,7 @@ import { LoginPage } from "@/components/LoginPage";
 import { AppLayout } from "@/components/AppLayout";
 import { DashboardPage } from "@/components/DashboardPage";
 import { PlaceholderPage } from "@/components/PlaceholderPage";
+import { ClientsPage } from "@/components/ClientsPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -33,7 +34,7 @@ function AuthenticatedApp() {
         <Route path="/balanca" element={<PlaceholderPage title="Balança / Pesagem" />} />
         <Route path="/estoque-fisico" element={<PlaceholderPage title="Estoque Físico" />} />
         <Route path="/estoque-fiscal" element={<PlaceholderPage title="Estoque Fiscal" />} />
-        <Route path="/clientes" element={<PlaceholderPage title="Clientes" />} />
+        <Route path="/clientes" element={<ClientsPage />} />
         <Route path="/conta-corrente" element={<PlaceholderPage title="Conta Corrente" />} />
         <Route path="/mtr" element={<PlaceholderPage title="Calculadora MTR" />} />
         <Route path="/relatorios" element={<PlaceholderPage title="Relatórios & BI" />} />

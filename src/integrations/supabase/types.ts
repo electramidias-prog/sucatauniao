@@ -50,6 +50,158 @@ export type Database = {
         }
         Relationships: []
       }
+      client_change_requests: {
+        Row: {
+          client_id: string
+          created_at: string
+          field_name: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          requested_by: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          field_name: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          requested_by: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          field_name?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          requested_by?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_change_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          address_city: string | null
+          address_complement: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_state: string | null
+          address_street: string | null
+          address_zip: string | null
+          bank_account: string | null
+          bank_agency: string | null
+          bank_name: string | null
+          client_type: string
+          created_at: string
+          created_by: string | null
+          document_number: string
+          document_type: string
+          email: string | null
+          id: string
+          municipal_registration: string | null
+          name: string
+          notes: string | null
+          phone: string | null
+          pix_key: string | null
+          pix_key_type: string | null
+          portal_access_enabled: boolean
+          portal_user_id: string | null
+          source: string | null
+          state_registration: string | null
+          status: string
+          tags: string[] | null
+          trade_name: string | null
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          bank_account?: string | null
+          bank_agency?: string | null
+          bank_name?: string | null
+          client_type?: string
+          created_at?: string
+          created_by?: string | null
+          document_number: string
+          document_type?: string
+          email?: string | null
+          id?: string
+          municipal_registration?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          portal_access_enabled?: boolean
+          portal_user_id?: string | null
+          source?: string | null
+          state_registration?: string | null
+          status?: string
+          tags?: string[] | null
+          trade_name?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          bank_account?: string | null
+          bank_agency?: string | null
+          bank_name?: string | null
+          client_type?: string
+          created_at?: string
+          created_by?: string | null
+          document_number?: string
+          document_type?: string
+          email?: string | null
+          id?: string
+          municipal_registration?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          portal_access_enabled?: boolean
+          portal_user_id?: string | null
+          source?: string | null
+          state_registration?: string | null
+          status?: string
+          tags?: string[] | null
+          trade_name?: string | null
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
