@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import {
-  Plus, Search, Upload, Download, Users, Smartphone, SmartphoneOff,
+  Plus, Search, Upload, Download, Users, Smartphone, SmartphoneNfc,
   Edit, Trash2, Eye, X, FileSpreadsheet,
 } from 'lucide-react';
 

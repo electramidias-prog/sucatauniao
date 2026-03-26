@@ -8,6 +8,7 @@ import { LoginPage } from "@/components/LoginPage";
 import { AppLayout } from "@/components/AppLayout";
 import { DashboardPage } from "@/components/DashboardPage";
 import { PlaceholderPage } from "@/components/PlaceholderPage";
+import { ClientsPage } from "@/components/ClientsPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
