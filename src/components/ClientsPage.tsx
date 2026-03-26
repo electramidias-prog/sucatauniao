@@ -407,7 +407,7 @@ export function ClientsPage() {
                     {c.portal_access_enabled ? (
                       <Smartphone className="h-3.5 w-3.5 text-success mx-auto" />
                     ) : (
-                      <SmartphoneOff className="h-3.5 w-3.5 text-muted-foreground mx-auto" />
+                      <SmartphoneNfc className="h-3.5 w-3.5 text-muted-foreground mx-auto" />
                     )}
                   </td>
                   <td className="text-center">{statusBadge(c.status)}</td>
