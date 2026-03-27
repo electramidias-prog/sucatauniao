@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, MessageSquare, Scale, Warehouse, FileText,
   Users, Wallet, Calculator, BarChart3, Shield, ScrollText, Settings,
-  Recycle, ChevronLeft, ChevronRight, LogOut, Bot, HardHat,
+  ChevronLeft, ChevronRight, LogOut, Bot, HardHat,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import logo from '@/assets/logo-sucata-uniao.jpg';
 
 const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard, MessageSquare, Scale, Warehouse, FileText,
@@ -24,7 +25,6 @@ export function AppSidebar({ onOpenAna, onOpenCarlinhos }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
-
   const userRole = user?.role || 'admin';
 
   return (
@@ -34,10 +34,10 @@ export function AppSidebar({ onOpenAna, onOpenCarlinhos }: AppSidebarProps) {
         collapsed ? 'w-14' : 'w-56'
       )}
     >
-      {/* Header */}
-      <div className="flex items-center h-12 px-3 border-b border-sidebar-border shrink-0">
-        <Recycle className="h-5 w-5 text-sidebar-primary shrink-0" />
-        {!collapsed && <span className="ml-2 font-bold text-sm truncate">Sucata União</span>}
+      {/* Header with logo */}
+      <div className="flex items-center h-12 px-2 border-b border-sidebar-border shrink-0">
+        <img src={logo} alt="SU" className="h-8 w-auto shrink-0 rounded" />
+        {!collapsed && <span className="ml-2 font-bold text-sm truncate text-sidebar-foreground">Sucata União</span>}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="ml-auto p-1 rounded hover:bg-sidebar-accent text-sidebar-foreground/60"
@@ -49,11 +49,8 @@ export function AppSidebar({ onOpenAna, onOpenCarlinhos }: AppSidebarProps) {
       {/* Menu */}
       <nav className="flex-1 overflow-y-auto py-2 px-1.5 space-y-3">
         {menuSections.map((section) => {
-          const visibleItems = section.items.filter((item) =>
-            item.roles.includes(userRole)
-          );
+          const visibleItems = section.items.filter((item) => item.roles.includes(userRole));
           if (visibleItems.length === 0) return null;
-
           return (
             <div key={section.title}>
               {!collapsed && (
@@ -88,19 +85,11 @@ export function AppSidebar({ onOpenAna, onOpenCarlinhos }: AppSidebarProps) {
 
       {/* AI Assistants */}
       <div className="px-1.5 pb-1 space-y-1">
-        <button
-          onClick={onOpenAna}
-          className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors"
-          title="A.N.A. - Assistente"
-        >
+        <button onClick={onOpenAna} className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors" title="A.N.A. - Assistente">
           <Bot className="h-4 w-4 shrink-0 text-info" />
           {!collapsed && <span>A.N.A.</span>}
         </button>
-        <button
-          onClick={onOpenCarlinhos}
-          className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors"
-          title="Carlinhos - Consultor"
-        >
+        <button onClick={onOpenCarlinhos} className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors" title="Carlinhos - Consultor">
           <HardHat className="h-4 w-4 shrink-0 text-warning" />
           {!collapsed && <span>Carlinhos</span>}
         </button>
@@ -109,7 +98,7 @@ export function AppSidebar({ onOpenAna, onOpenCarlinhos }: AppSidebarProps) {
       {/* User & Logout */}
       <div className="border-t border-sidebar-border p-2 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-bold text-sidebar-primary shrink-0">
+          <div className="h-7 w-7 rounded-full bg-sidebar-primary flex items-center justify-center text-xs font-bold text-sidebar-primary-foreground shrink-0">
             {user?.full_name?.charAt(0) || 'A'}
           </div>
           {!collapsed && (
