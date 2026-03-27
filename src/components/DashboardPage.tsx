@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Scale, Warehouse, Users, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, PieChart, Pie, Cell
+  PieChart, Pie, Cell
 } from 'recharts';
 
 const stats = [
@@ -22,11 +22,11 @@ const entradaSaida = [
 ];
 
 const materiaisData = [
-  { name: 'Ferro', value: 180, color: 'hsl(152, 45%, 22%)' },
-  { name: 'Cobre', value: 45, color: 'hsl(85, 35%, 45%)' },
+  { name: 'Ferro', value: 180, color: 'hsl(0, 72%, 40%)' },
+  { name: 'Cobre', value: 45, color: 'hsl(145, 50%, 32%)' },
   { name: 'Alumínio', value: 62, color: 'hsl(38, 92%, 50%)' },
   { name: 'Inox', value: 28, color: 'hsl(210, 80%, 52%)' },
-  { name: 'Outros', value: 27.5, color: 'hsl(200, 10%, 45%)' },
+  { name: 'Outros', value: 27.5, color: 'hsl(0, 0%, 40%)' },
 ];
 
 const topClientes = [
@@ -59,54 +59,36 @@ export function DashboardPage() {
               </div>
             </div>
             <div className="flex items-center gap-1 mt-1.5">
-              {s.up ? (
-                <ArrowUpRight className="h-3 w-3 text-success" />
-              ) : (
-                <ArrowDownRight className="h-3 w-3 text-destructive" />
-              )}
-              <span className={`text-[10px] font-medium ${s.up ? 'text-success' : 'text-destructive'}`}>
-                {s.change}
-              </span>
+              {s.up ? <ArrowUpRight className="h-3 w-3 text-accent" /> : <ArrowDownRight className="h-3 w-3 text-destructive" />}
+              <span className={`text-[10px] font-medium ${s.up ? 'text-accent' : 'text-destructive'}`}>{s.change}</span>
               <span className="text-[10px] text-muted-foreground">vs ontem</span>
             </div>
           </Card>
         ))}
       </div>
 
-      {/* Charts Row */}
+      {/* Charts */}
       <div className="grid lg:grid-cols-3 gap-3">
-        {/* Area Chart - Entrada/Saída */}
         <Card className="lg:col-span-2 p-3">
           <p className="text-xs font-semibold mb-3">Entrada vs Saída (toneladas)</p>
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={entradaSaida}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(200, 12%, 85%)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 3%, 84%)" />
               <XAxis dataKey="dia" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 10 }} />
               <Tooltip contentStyle={{ fontSize: 11 }} />
-              <Area type="monotone" dataKey="entrada" stroke="hsl(152, 45%, 22%)" fill="hsl(152, 45%, 22%)" fillOpacity={0.15} name="Entrada" />
-              <Area type="monotone" dataKey="saida" stroke="hsl(85, 35%, 45%)" fill="hsl(85, 35%, 45%)" fillOpacity={0.15} name="Saída" />
+              <Area type="monotone" dataKey="entrada" stroke="hsl(0, 72%, 40%)" fill="hsl(0, 72%, 40%)" fillOpacity={0.15} name="Entrada" />
+              <Area type="monotone" dataKey="saida" stroke="hsl(145, 50%, 32%)" fill="hsl(145, 50%, 32%)" fillOpacity={0.15} name="Saída" />
             </AreaChart>
           </ResponsiveContainer>
         </Card>
 
-        {/* Pie Chart - Materiais */}
         <Card className="p-3">
           <p className="text-xs font-semibold mb-3">Estoque por Material</p>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
-              <Pie
-                data={materiaisData}
-                cx="50%"
-                cy="50%"
-                innerRadius={45}
-                outerRadius={75}
-                dataKey="value"
-                paddingAngle={2}
-              >
-                {materiaisData.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
-                ))}
+              <Pie data={materiaisData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} dataKey="value" paddingAngle={2}>
+                {materiaisData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
               </Pie>
               <Tooltip contentStyle={{ fontSize: 11 }} formatter={(v: number) => `${v}t`} />
             </PieChart>
@@ -124,17 +106,14 @@ export function DashboardPage() {
 
       {/* Bottom row */}
       <div className="grid lg:grid-cols-2 gap-3">
-        {/* Top Clientes */}
         <Card className="p-3">
           <p className="text-xs font-semibold mb-2">Top Clientes do Mês</p>
           <table className="w-full table-dense">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left text-muted-foreground font-medium">Cliente</th>
-                <th className="text-right text-muted-foreground font-medium">Peso</th>
-                <th className="text-right text-muted-foreground font-medium">Tickets</th>
-              </tr>
-            </thead>
+            <thead><tr className="border-b">
+              <th className="text-left text-muted-foreground font-medium">Cliente</th>
+              <th className="text-right text-muted-foreground font-medium">Peso</th>
+              <th className="text-right text-muted-foreground font-medium">Tickets</th>
+            </tr></thead>
             <tbody>
               {topClientes.map((c, i) => (
                 <tr key={i} className="border-b border-border/50">
@@ -147,19 +126,16 @@ export function DashboardPage() {
           </table>
         </Card>
 
-        {/* Últimas pesagens */}
         <Card className="p-3">
           <p className="text-xs font-semibold mb-2">Últimas Pesagens</p>
           <table className="w-full table-dense">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left text-muted-foreground font-medium">Ticket</th>
-                <th className="text-left text-muted-foreground font-medium">Placa</th>
-                <th className="text-left text-muted-foreground font-medium">Material</th>
-                <th className="text-right text-muted-foreground font-medium">Líquido</th>
-                <th className="text-right text-muted-foreground font-medium">Status</th>
-              </tr>
-            </thead>
+            <thead><tr className="border-b">
+              <th className="text-left text-muted-foreground font-medium">Ticket</th>
+              <th className="text-left text-muted-foreground font-medium">Placa</th>
+              <th className="text-left text-muted-foreground font-medium">Material</th>
+              <th className="text-right text-muted-foreground font-medium">Líquido</th>
+              <th className="text-right text-muted-foreground font-medium">Status</th>
+            </tr></thead>
             <tbody>
               {[
                 { ticket: '#1847', placa: 'ABC-1234', material: 'Ferro', liquido: '3.2t', status: 'Finalizado' },
@@ -175,11 +151,8 @@ export function DashboardPage() {
                   <td className="text-right font-mono">{p.liquido}</td>
                   <td className="text-right">
                     <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                      p.status === 'Finalizado' ? 'badge-finalizado' :
-                      p.status === 'Aberto' ? 'badge-aberto' : 'badge-pendente'
-                    }`}>
-                      {p.status}
-                    </span>
+                      p.status === 'Finalizado' ? 'badge-finalizado' : p.status === 'Aberto' ? 'badge-aberto' : 'badge-pendente'
+                    }`}>{p.status}</span>
                   </td>
                 </tr>
               ))}
