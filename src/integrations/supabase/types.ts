@@ -97,6 +97,101 @@ export type Database = {
           },
         ]
       }
+      client_pix_keys: {
+        Row: {
+          bank_name: string | null
+          client_id: string
+          created_at: string
+          holder_name: string | null
+          id: string
+          is_favorite: boolean
+          key_type: string
+          key_value: string
+          usage_count: number
+        }
+        Insert: {
+          bank_name?: string | null
+          client_id: string
+          created_at?: string
+          holder_name?: string | null
+          id?: string
+          is_favorite?: boolean
+          key_type?: string
+          key_value: string
+          usage_count?: number
+        }
+        Update: {
+          bank_name?: string | null
+          client_id?: string
+          created_at?: string
+          holder_name?: string | null
+          id?: string
+          is_favorite?: boolean
+          key_type?: string
+          key_value?: string
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_pix_keys_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_transactions: {
+        Row: {
+          amount: number
+          client_id: string
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          settlement_id: string | null
+          status: string
+          type: string
+        }
+        Insert: {
+          amount?: number
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          settlement_id?: string | null
+          status?: string
+          type?: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          settlement_id?: string | null
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_transactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_transactions_settlement_id_fkey"
+            columns: ["settlement_id"]
+            isOneToOne: false
+            referencedRelation: "payment_settlements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address_city: string | null
@@ -109,6 +204,7 @@ export type Database = {
           bank_account: string | null
           bank_agency: string | null
           bank_name: string | null
+          birth_date: string | null
           client_type: string
           created_at: string
           created_by: string | null
@@ -118,18 +214,23 @@ export type Database = {
           id: string
           municipal_registration: string | null
           name: string
+          negotiation_history: string | null
+          nickname: string | null
           notes: string | null
+          operational_status: string
           phone: string | null
           pix_key: string | null
           pix_key_type: string | null
           portal_access_enabled: boolean
           portal_user_id: string | null
+          rg: string | null
           source: string | null
           state_registration: string | null
           status: string
           tags: string[] | null
           trade_name: string | null
           updated_at: string
+          vehicle_plate: string | null
           whatsapp: string | null
         }
         Insert: {
@@ -143,6 +244,7 @@ export type Database = {
           bank_account?: string | null
           bank_agency?: string | null
           bank_name?: string | null
+          birth_date?: string | null
           client_type?: string
           created_at?: string
           created_by?: string | null
@@ -152,18 +254,23 @@ export type Database = {
           id?: string
           municipal_registration?: string | null
           name: string
+          negotiation_history?: string | null
+          nickname?: string | null
           notes?: string | null
+          operational_status?: string
           phone?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
           portal_access_enabled?: boolean
           portal_user_id?: string | null
+          rg?: string | null
           source?: string | null
           state_registration?: string | null
           status?: string
           tags?: string[] | null
           trade_name?: string | null
           updated_at?: string
+          vehicle_plate?: string | null
           whatsapp?: string | null
         }
         Update: {
@@ -177,6 +284,7 @@ export type Database = {
           bank_account?: string | null
           bank_agency?: string | null
           bank_name?: string | null
+          birth_date?: string | null
           client_type?: string
           created_at?: string
           created_by?: string | null
@@ -186,21 +294,86 @@ export type Database = {
           id?: string
           municipal_registration?: string | null
           name?: string
+          negotiation_history?: string | null
+          nickname?: string | null
           notes?: string | null
+          operational_status?: string
           phone?: string | null
           pix_key?: string | null
           pix_key_type?: string | null
           portal_access_enabled?: boolean
           portal_user_id?: string | null
+          rg?: string | null
           source?: string | null
           state_registration?: string | null
           status?: string
           tags?: string[] | null
           trade_name?: string | null
           updated_at?: string
+          vehicle_plate?: string | null
           whatsapp?: string | null
         }
         Relationships: []
+      }
+      payment_settlements: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          holder_name: string | null
+          id: string
+          net_amount: number
+          notes: string | null
+          pix_key_display: string | null
+          pix_key_id: string | null
+          status: string
+          total_deductions: number
+          total_materials: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          holder_name?: string | null
+          id?: string
+          net_amount?: number
+          notes?: string | null
+          pix_key_display?: string | null
+          pix_key_id?: string | null
+          status?: string
+          total_deductions?: number
+          total_materials?: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          holder_name?: string | null
+          id?: string
+          net_amount?: number
+          notes?: string | null
+          pix_key_display?: string | null
+          pix_key_id?: string | null
+          status?: string
+          total_deductions?: number
+          total_materials?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_settlements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_settlements_pix_key_id_fkey"
+            columns: ["pix_key_id"]
+            isOneToOne: false
+            referencedRelation: "client_pix_keys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -246,6 +419,78 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      weighings: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          gross_weight: number
+          id: string
+          material_type: string
+          net_weight: number | null
+          notes: string | null
+          price_per_kg: number
+          settlement_id: string | null
+          status: string
+          tare_weight: number
+          ticket_number: number
+          total_value: number | null
+          updated_at: string
+          vehicle_plate: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          gross_weight?: number
+          id?: string
+          material_type?: string
+          net_weight?: number | null
+          notes?: string | null
+          price_per_kg?: number
+          settlement_id?: string | null
+          status?: string
+          tare_weight?: number
+          ticket_number?: number
+          total_value?: number | null
+          updated_at?: string
+          vehicle_plate?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          gross_weight?: number
+          id?: string
+          material_type?: string
+          net_weight?: number | null
+          notes?: string | null
+          price_per_kg?: number
+          settlement_id?: string | null
+          status?: string
+          tare_weight?: number
+          ticket_number?: number
+          total_value?: number | null
+          updated_at?: string
+          vehicle_plate?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weighings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weighings_settlement_id_fkey"
+            columns: ["settlement_id"]
+            isOneToOne: false
+            referencedRelation: "payment_settlements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
