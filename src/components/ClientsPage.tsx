@@ -94,7 +94,7 @@ export function ClientsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const fetchClients = useCallback(async () => {
     setLoading(true);
