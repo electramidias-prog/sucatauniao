@@ -202,6 +202,8 @@ export function ClientsPage() {
             <Upload className="h-3.5 w-3.5 mr-1" /> Importar
           </Button>
           <ImportMappingDialog open={importOpen} onOpenChange={setImportOpen} onComplete={fetchClients} />
+          <Button variant="outline" size="sm" onClick={exportCSV}>
+            <Download className="h-3.5 w-3.5 mr-1" /> Exportar
           </Button>
           <Dialog open={dialogOpen} onOpenChange={(o) => { setDialogOpen(o); if (!o) { setEditingId(null); setForm(EMPTY_FORM); } }}>
             <DialogTrigger asChild>
