@@ -228,7 +228,13 @@ export function ClientsPage() {
                 <div><Label className="text-xs">Tipo Cliente</Label>
                   <Select value={form.client_type} onValueChange={v => updateField('client_type', v)}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="fornecedor">Fornecedor</SelectItem><SelectItem value="comprador">Comprador</SelectItem><SelectItem value="ambos">Ambos</SelectItem></SelectContent>
+                    <SelectContent>
+                      <SelectItem value="fornecedor">Fornecedor</SelectItem>
+                      <SelectItem value="pesagem_avulsa">Pesagem Avulsa</SelectItem>
+                      <SelectItem value="coleta_agendada">Coleta Agendada</SelectItem>
+                      <SelectItem value="envio">Envio</SelectItem>
+                      <SelectItem value="doacao">Doação</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
                 <div><Label className="text-xs">Status</Label>
