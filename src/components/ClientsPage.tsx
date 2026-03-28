@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import {
   Edit, Trash2, Eye, AlertTriangle, Star, StarOff, Copy, Check,
   CreditCard, X, Ban, CheckCircle2,
 } from 'lucide-react';
+import { ImportMappingDialog } from '@/components/ImportMappingDialog';
 
 // ─── Types ───
 interface Client {
@@ -93,7 +94,7 @@ export function ClientsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const fetchClients = useCallback(async () => {
     setLoading(true);
@@ -171,29 +172,7 @@ export function ClientsPage() {
     a.download = `clientes_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
   };
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    const text = await file.text();
-    const lines = text.split('\n').filter(Boolean);
-    if (lines.length < 2) { toast.error('Arquivo vazio'); return; }
-    const headers = lines[0].split(';').map(h => h.trim().toLowerCase());
-    const nameIdx = headers.findIndex(h => h.includes('nome'));
-    const docIdx = headers.findIndex(h => h.includes('cpf') || h.includes('cnpj') || h.includes('documento'));
-    if (nameIdx === -1 || docIdx === -1) { toast.error('Colunas Nome e CPF/CNPJ obrigatórias'); return; }
-    let imported = 0;
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(';').map(c => c.trim());
-      const doc = cols[docIdx]?.replace(/[^0-9]/g, '');
-      if (!cols[nameIdx] || !doc) continue;
-      const { error } = await supabase.from('clients').insert({
-        name: cols[nameIdx], document_number: doc, document_type: doc.length > 11 ? 'cnpj' : 'cpf',
-        source: 'import', created_by: user?.id,
-      });
-      if (!error) imported++;
-    }
-    toast.success(`${imported} clientes importados!`); fetchClients();
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
+  // Import is now handled by ImportMappingDialog
 
   const updateField = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }));
 
@@ -219,10 +198,10 @@ export function ClientsPage() {
           <p className="text-sm text-muted-foreground">{clients.length} clientes cadastrados</p>
         </div>
         <div className="flex gap-2">
-          <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleImport} />
-          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+          <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
             <Upload className="h-3.5 w-3.5 mr-1" /> Importar
           </Button>
+          <ImportMappingDialog open={importOpen} onOpenChange={setImportOpen} onComplete={fetchClients} />
           <Button variant="outline" size="sm" onClick={exportCSV}>
             <Download className="h-3.5 w-3.5 mr-1" /> Exportar
           </Button>
@@ -249,7 +228,13 @@ export function ClientsPage() {
                 <div><Label className="text-xs">Tipo Cliente</Label>
                   <Select value={form.client_type} onValueChange={v => updateField('client_type', v)}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="fornecedor">Fornecedor</SelectItem><SelectItem value="comprador">Comprador</SelectItem><SelectItem value="ambos">Ambos</SelectItem></SelectContent>
+                    <SelectContent>
+                      <SelectItem value="fornecedor">Fornecedor</SelectItem>
+                      <SelectItem value="pesagem_avulsa">Pesagem Avulsa</SelectItem>
+                      <SelectItem value="coleta_agendada">Coleta Agendada</SelectItem>
+                      <SelectItem value="envio">Envio</SelectItem>
+                      <SelectItem value="doacao">Doação</SelectItem>
+                    </SelectContent>
                   </Select>
                 </div>
                 <div><Label className="text-xs">Status</Label>
@@ -303,7 +288,14 @@ export function ClientsPage() {
         </div>
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="todos">Todos</SelectItem><SelectItem value="fornecedor">Fornecedor</SelectItem><SelectItem value="comprador">Comprador</SelectItem></SelectContent>
+          <SelectContent>
+            <SelectItem value="todos">Todos</SelectItem>
+            <SelectItem value="fornecedor">Fornecedor</SelectItem>
+            <SelectItem value="pesagem_avulsa">Pesagem Avulsa</SelectItem>
+            <SelectItem value="coleta_agendada">Coleta Agendada</SelectItem>
+            <SelectItem value="envio">Envio</SelectItem>
+            <SelectItem value="doacao">Doação</SelectItem>
+          </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
