@@ -172,29 +172,7 @@ export function ClientsPage() {
     a.download = `clientes_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
   };
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    const text = await file.text();
-    const lines = text.split('\n').filter(Boolean);
-    if (lines.length < 2) { toast.error('Arquivo vazio'); return; }
-    const headers = lines[0].split(';').map(h => h.trim().toLowerCase());
-    const nameIdx = headers.findIndex(h => h.includes('nome'));
-    const docIdx = headers.findIndex(h => h.includes('cpf') || h.includes('cnpj') || h.includes('documento'));
-    if (nameIdx === -1 || docIdx === -1) { toast.error('Colunas Nome e CPF/CNPJ obrigatórias'); return; }
-    let imported = 0;
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(';').map(c => c.trim());
-      const doc = cols[docIdx]?.replace(/[^0-9]/g, '');
-      if (!cols[nameIdx] || !doc) continue;
-      const { error } = await supabase.from('clients').insert({
-        name: cols[nameIdx], document_number: doc, document_type: doc.length > 11 ? 'cnpj' : 'cpf',
-        source: 'import', created_by: user?.id,
-      });
-      if (!error) imported++;
-    }
-    toast.success(`${imported} clientes importados!`); fetchClients();
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
+  // Import is now handled by ImportMappingDialog
 
   const updateField = (f: string, v: string) => setForm(p => ({ ...p, [f]: v }));
 
