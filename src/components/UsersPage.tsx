@@ -102,7 +102,7 @@ export function UsersPage() {
   };
 
   const handleChangeRole = async (userId: string, newRole: string) => {
-    const { error } = await supabase.from('user_roles').update({ role: newRole }).eq('user_id', userId);
+    const { error } = await supabase.from('user_roles').update({ role: newRole as any }).eq('user_id', userId);
     if (error) { toast.error('Erro ao alterar cargo'); return; }
     toast.success('Cargo atualizado!');
     fetchUsers();
