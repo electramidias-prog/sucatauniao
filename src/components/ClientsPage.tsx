@@ -17,6 +17,7 @@ import {
   Edit, Trash2, Eye, AlertTriangle, Star, StarOff, Copy, Check,
   CreditCard, X, Ban, CheckCircle2,
 } from 'lucide-react';
+import { ImportMappingDialog } from '@/components/ImportMappingDialog';
 
 // ─── Types ───
 interface Client {
