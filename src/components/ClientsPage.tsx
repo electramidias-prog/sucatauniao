@@ -288,7 +288,14 @@ export function ClientsPage() {
         </div>
         <Select value={filterType} onValueChange={setFilterType}>
           <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="todos">Todos</SelectItem><SelectItem value="fornecedor">Fornecedor</SelectItem><SelectItem value="comprador">Comprador</SelectItem></SelectContent>
+          <SelectContent>
+            <SelectItem value="todos">Todos</SelectItem>
+            <SelectItem value="fornecedor">Fornecedor</SelectItem>
+            <SelectItem value="pesagem_avulsa">Pesagem Avulsa</SelectItem>
+            <SelectItem value="coleta_agendada">Coleta Agendada</SelectItem>
+            <SelectItem value="envio">Envio</SelectItem>
+            <SelectItem value="doacao">Doação</SelectItem>
+          </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
