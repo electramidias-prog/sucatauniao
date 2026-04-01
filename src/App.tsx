@@ -9,6 +9,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { DashboardPage } from "@/components/DashboardPage";
 import { PlaceholderPage } from "@/components/PlaceholderPage";
 import { ClientsPage } from "@/components/ClientsPage";
+import { BalancaPage } from "@/components/BalancaPage";
 import { UsersPage } from "@/components/UsersPage";
 import NotFound from "./pages/NotFound.tsx";
 
