@@ -33,7 +33,7 @@ function AuthenticatedApp() {
       <Routes>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/chat-equipe" element={<PlaceholderPage title="Chat da Equipe" />} />
-        <Route path="/balanca" element={<PlaceholderPage title="Balança / Pesagem" />} />
+        <Route path="/balanca" element={<BalancaPage />} />
         <Route path="/estoque-fisico" element={<PlaceholderPage title="Estoque Físico" />} />
         <Route path="/estoque-fiscal" element={<PlaceholderPage title="Estoque Fiscal" />} />
         <Route path="/clientes" element={<ClientsPage />} />
