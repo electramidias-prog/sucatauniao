@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
 import { Settings, Building2, Scale, Printer, Globe, Bell } from 'lucide-react';
 
 export function ConfiguracoesPage() {
