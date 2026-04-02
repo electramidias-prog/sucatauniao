@@ -11,6 +11,13 @@ import { PlaceholderPage } from "@/components/PlaceholderPage";
 import { ClientsPage } from "@/components/ClientsPage";
 import { BalancaPage } from "@/components/BalancaPage";
 import { UsersPage } from "@/components/UsersPage";
+import { ContaCorrentePage } from "@/components/ContaCorrentePage";
+import { EstoqueFisicoPage } from "@/components/EstoqueFisicoPage";
+import { EstoqueFiscalPage } from "@/components/EstoqueFiscalPage";
+import { CalculadoraMTRPage } from "@/components/CalculadoraMTRPage";
+import { RelatoriosPage } from "@/components/RelatoriosPage";
+import { AuditoriaPage } from "@/components/AuditoriaPage";
+import { ConfiguracoesPage } from "@/components/ConfiguracoesPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -34,15 +41,15 @@ function AuthenticatedApp() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/chat-equipe" element={<PlaceholderPage title="Chat da Equipe" />} />
         <Route path="/balanca" element={<BalancaPage />} />
-        <Route path="/estoque-fisico" element={<PlaceholderPage title="Estoque Físico" />} />
-        <Route path="/estoque-fiscal" element={<PlaceholderPage title="Estoque Fiscal" />} />
+        <Route path="/estoque-fisico" element={<EstoqueFisicoPage />} />
+        <Route path="/estoque-fiscal" element={<EstoqueFiscalPage />} />
         <Route path="/clientes" element={<ClientsPage />} />
-        <Route path="/conta-corrente" element={<PlaceholderPage title="Conta Corrente" />} />
-        <Route path="/mtr" element={<PlaceholderPage title="Calculadora MTR" />} />
-        <Route path="/relatorios" element={<PlaceholderPage title="Relatórios & BI" />} />
+        <Route path="/conta-corrente" element={<ContaCorrentePage />} />
+        <Route path="/mtr" element={<CalculadoraMTRPage />} />
+        <Route path="/relatorios" element={<RelatoriosPage />} />
         <Route path="/usuarios" element={<UsersPage />} />
-        <Route path="/auditoria" element={<PlaceholderPage title="Auditoria" />} />
-        <Route path="/configuracoes" element={<PlaceholderPage title="Configurações" />} />
+        <Route path="/auditoria" element={<AuditoriaPage />} />
+        <Route path="/configuracoes" element={<ConfiguracoesPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
