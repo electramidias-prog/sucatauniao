@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { toast } from 'sonner';
 import {
   Upload, FileSpreadsheet, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle,
-  Download, Database, Search, X,
+  Download, Database, Search, X, Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -256,13 +256,17 @@ export function CentralEmissaoPage() {
     });
   };
 
+  const removeLine = (i: number) => {
+    setMatched(prev => prev.filter((_, idx) => idx !== i));
+  };
+
   const matchedCount = matched.filter(l => l.client_id).length;
   const allMatched = matched.length > 0 && matchedCount === matched.length;
 
   // ─── Etapa 3: exports ───
   const exportNFe = () => {
     const header = ['Nome', 'CPF_CNPJ', 'Data', 'Peso_KG', 'Valor_RS', 'Classificacao', 'Placa'];
-    const rows = matched.map(l => [
+    const rows = matched.filter(l => l.client_id).map(l => [
       l.client_name,
       l.cpf_cnpj,
       dataBR(l.origem.data),
@@ -276,7 +280,7 @@ export function CentralEmissaoPage() {
 
   const exportMTR = () => {
     const header = ['CPF_CNPJ_Gerador', 'Nome_Gerador', 'Placa_Veiculo', 'Tipo_Residuo', 'Peso_KG', 'Data_Coleta'];
-    const rows = matched.map(l => [
+    const rows = matched.filter(l => l.client_id).map(l => [
       l.cpf_cnpj,
       l.client_name,
       l.vehicle_plate,
@@ -494,6 +498,7 @@ export function CentralEmissaoPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-8"></TableHead>
+                    <TableHead className="w-8"></TableHead>
                     <TableHead>Destinatário (extrato)</TableHead>
                     <TableHead>Cliente Sistema</TableHead>
                     <TableHead>CPF/CNPJ</TableHead>
@@ -511,6 +516,17 @@ export function CentralEmissaoPage() {
                         !l.client_id && 'bg-destructive/5',
                       )}
                     >
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => removeLine(i)}
+                          title="Remover linha"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
                       <TableCell>
                         {l.client_id
                           ? <CheckCircle2 className="h-4 w-4 text-success" />
@@ -564,7 +580,7 @@ export function CentralEmissaoPage() {
               <Button variant="outline" onClick={() => setStep('upload')}>
                 <ArrowLeft className="h-4 w-4" /> Voltar
               </Button>
-              <Button onClick={() => setStep('fila')} disabled={!allMatched}>
+              <Button onClick={() => setStep('fila')} disabled={matched.length === 0}>
                 Avançar para Fila de Emissão <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
@@ -596,7 +612,7 @@ export function CentralEmissaoPage() {
                 </TableHeader>
                 <TableBody>
                   {matched.map((l, i) => {
-                    const ready = !!l.classificacao && !!l.vehicle_plate;
+                    const ready = !!l.classificacao;
                     return (
                       <TableRow key={i}>
                         <TableCell className="text-xs">{dataBR(l.origem.data)}</TableCell>
