@@ -1,43 +1,223 @@
+import { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Scale, Warehouse, Users, TrendingUp, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Scale, Weight, Users, DollarSign } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell
+  PieChart, Pie, Cell,
 } from 'recharts';
+import { supabase } from '@/integrations/supabase/client';
 
-const stats = [
-  { label: 'Pesagens Hoje', value: '18', icon: Scale, change: '+3', up: true },
-  { label: 'Estoque Total (t)', value: '342.5', icon: Warehouse, change: '+12.8', up: true },
-  { label: 'Clientes Ativos', value: '87', icon: Users, change: '+2', up: true },
-  { label: 'Faturamento Mês', value: 'R$ 148.2k', icon: TrendingUp, change: '-5%', up: false },
-];
+const MATERIAL_COLORS: Record<string, string> = {
+  mista: '#dc2626',
+  pesada: '#16a34a',
+  limaria: '#ca8a04',
+  fundido: '#2563eb',
+  amortecedor: '#9333ea',
+  outros: '#6b7280',
+};
 
-const entradaSaida = [
-  { dia: '01', entrada: 12.5, saida: 8.2 },
-  { dia: '05', entrada: 18.3, saida: 15.1 },
-  { dia: '10', entrada: 22.1, saida: 19.6 },
-  { dia: '15', entrada: 15.7, saida: 12.3 },
-  { dia: '20', entrada: 28.4, saida: 22.8 },
-  { dia: '25', entrada: 19.2, saida: 16.5 },
-];
+const MATERIAL_LABELS: Record<string, string> = {
+  mista: 'Mista',
+  pesada: 'Pesada',
+  limaria: 'Limaria',
+  fundido: 'Fundido',
+  amortecedor: 'Amortecedor',
+  outros: 'Outros',
+};
 
-const materiaisData = [
-  { name: 'Ferro', value: 180, color: 'hsl(0, 72%, 40%)' },
-  { name: 'Cobre', value: 45, color: 'hsl(145, 50%, 32%)' },
-  { name: 'Alumínio', value: 62, color: 'hsl(38, 92%, 50%)' },
-  { name: 'Inox', value: 28, color: 'hsl(210, 80%, 52%)' },
-  { name: 'Outros', value: 27.5, color: 'hsl(0, 0%, 40%)' },
-];
+interface KPIs {
+  pesagensHoje: number;
+  pesoHoje: number;
+  clientesAtivos: number;
+  valorPendente: number;
+}
 
-const topClientes = [
-  { nome: 'Metalúrgica Silva', peso: '48.2t', tickets: 12 },
-  { nome: 'Auto Peças Central', peso: '32.7t', tickets: 8 },
-  { nome: 'Construtora ABC', peso: '28.1t', tickets: 6 },
-  { nome: 'Oficina do João', peso: '19.5t', tickets: 15 },
-  { nome: 'Ferro Velho Boa Vista', peso: '15.3t', tickets: 4 },
-];
+interface DiaSerie { dia: string; peso: number }
+interface MaterialFatia { name: string; value: number; color: string }
+interface TopCliente { client_id: string; nome: string; peso: number; valor: number; tickets: number }
+
+function startOfTodayISO(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+function daysAgoISO(days: number): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - days);
+  return d.toISOString();
+}
+
+function ddmm(iso: string): string {
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function fmtBRL(v: number): string {
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+}
+
+function fmtKg(v: number): string {
+  return v.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+}
+
+async function fetchKPIs(): Promise<KPIs> {
+  const todayISO = startOfTodayISO();
+
+  const [todayRows, clientesRes, pendentesRes] = await Promise.all([
+    supabase
+      .from('weighings')
+      .select('net_weight, status')
+      .gte('created_at', todayISO)
+      .neq('status', 'cancelado'),
+    supabase
+      .from('clients')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'ativo'),
+    supabase
+      .from('weighings')
+      .select('total_value')
+      .eq('status', 'pendente'),
+  ]);
+
+  const pesagensHoje = todayRows.data?.length ?? 0;
+  const pesoHoje = (todayRows.data ?? []).reduce((s, r: any) => s + (Number(r.net_weight) || 0), 0);
+  const clientesAtivos = clientesRes.count ?? 0;
+  const valorPendente = (pendentesRes.data ?? []).reduce((s, r: any) => s + (Number(r.total_value) || 0), 0);
+
+  return { pesagensHoje, pesoHoje, clientesAtivos, valorPendente };
+}
+
+async function fetchSerie7d(): Promise<DiaSerie[]> {
+  const since = daysAgoISO(6);
+  const { data } = await supabase
+    .from('weighings')
+    .select('created_at, net_weight, status')
+    .gte('created_at', since)
+    .neq('status', 'cancelado');
+
+  const buckets = new Map<string, number>();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - i);
+    buckets.set(d.toISOString().slice(0, 10), 0);
+  }
+  (data ?? []).forEach((r: any) => {
+    const key = new Date(r.created_at).toISOString().slice(0, 10);
+    if (buckets.has(key)) {
+      buckets.set(key, (buckets.get(key) || 0) + (Number(r.net_weight) || 0));
+    }
+  });
+  return Array.from(buckets.entries()).map(([k, v]) => ({ dia: ddmm(k), peso: Number(v.toFixed(1)) }));
+}
+
+async function fetchMateriais30d(): Promise<MaterialFatia[]> {
+  const since = daysAgoISO(30);
+  const { data } = await supabase
+    .from('weighings')
+    .select('material_type, net_weight, status')
+    .gte('created_at', since)
+    .neq('status', 'cancelado');
+
+  const sums = new Map<string, number>();
+  (data ?? []).forEach((r: any) => {
+    const key = (r.material_type || 'outros').toLowerCase();
+    const bucket = MATERIAL_COLORS[key] ? key : 'outros';
+    sums.set(bucket, (sums.get(bucket) || 0) + (Number(r.net_weight) || 0));
+  });
+  return Array.from(sums.entries())
+    .filter(([, v]) => v > 0)
+    .map(([k, v]) => ({
+      name: MATERIAL_LABELS[k] ?? k,
+      value: Number(v.toFixed(1)),
+      color: MATERIAL_COLORS[k] ?? MATERIAL_COLORS.outros,
+    }));
+}
+
+async function fetchTopClientes30d(): Promise<TopCliente[]> {
+  const since = daysAgoISO(30);
+  const { data } = await supabase
+    .from('weighings')
+    .select('client_id, net_weight, total_value, status')
+    .gte('created_at', since)
+    .neq('status', 'cancelado');
+
+  const agg = new Map<string, { peso: number; valor: number; tickets: number }>();
+  (data ?? []).forEach((r: any) => {
+    if (!r.client_id) return;
+    const cur = agg.get(r.client_id) || { peso: 0, valor: 0, tickets: 0 };
+    cur.peso += Number(r.net_weight) || 0;
+    cur.valor += Number(r.total_value) || 0;
+    cur.tickets += 1;
+    agg.set(r.client_id, cur);
+  });
+
+  const ids = Array.from(agg.keys());
+  if (ids.length === 0) return [];
+
+  const { data: clients } = await supabase
+    .from('clients')
+    .select('id, name')
+    .in('id', ids);
+  const nameMap = new Map<string, string>();
+  (clients ?? []).forEach((c: any) => nameMap.set(c.id, c.name));
+
+  return ids
+    .map((id) => ({
+      client_id: id,
+      nome: nameMap.get(id) || '—',
+      peso: agg.get(id)!.peso,
+      valor: agg.get(id)!.valor,
+      tickets: agg.get(id)!.tickets,
+    }))
+    .sort((a, b) => b.peso - a.peso)
+    .slice(0, 5);
+}
 
 export function DashboardPage() {
+  const [loading, setLoading] = useState(true);
+  const [kpis, setKpis] = useState<KPIs | null>(null);
+  const [serie, setSerie] = useState<DiaSerie[]>([]);
+  const [materiais, setMateriais] = useState<MaterialFatia[]>([]);
+  const [topClientes, setTopClientes] = useState<TopCliente[]>([]);
+
+  const loadAll = async () => {
+    try {
+      const [k, s, m, t] = await Promise.all([
+        fetchKPIs(),
+        fetchSerie7d(),
+        fetchMateriais30d(),
+        fetchTopClientes30d(),
+      ]);
+      setKpis(k);
+      setSerie(s);
+      setMateriais(m);
+      setTopClientes(t);
+    } catch (e) {
+      console.error('Dashboard load error', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAll();
+    const id = setInterval(loadAll, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const cards = [
+    { label: 'Pesagens Hoje', value: kpis ? String(kpis.pesagensHoje) : '—', icon: Scale },
+    { label: 'Peso Total Hoje (kg)', value: kpis ? fmtKg(kpis.pesoHoje) : '—', icon: Weight },
+    { label: 'Clientes Ativos', value: kpis ? String(kpis.clientesAtivos) : '—', icon: Users },
+    { label: 'Valor a Pagar', value: kpis ? fmtBRL(kpis.valorPendente) : '—', icon: DollarSign },
+  ];
+
+  const serieHasData = serie.some((d) => d.peso > 0);
+
   return (
     <div className="space-y-4">
       <div>
@@ -47,21 +227,20 @@ export function DashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {stats.map((s) => (
-          <Card key={s.label} className="p-3">
+        {cards.map((c) => (
+          <Card key={c.label} className="p-3">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{s.label}</p>
-                <p className="text-xl font-bold mt-0.5">{s.value}</p>
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{c.label}</p>
+                {loading ? (
+                  <Skeleton className="h-6 w-20 mt-1" />
+                ) : (
+                  <p className="text-xl font-bold mt-0.5 truncate">{c.value}</p>
+                )}
               </div>
-              <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center">
-                <s.icon className="h-4 w-4 text-primary" />
+              <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                <c.icon className="h-4 w-4 text-primary" />
               </div>
-            </div>
-            <div className="flex items-center gap-1 mt-1.5">
-              {s.up ? <ArrowUpRight className="h-3 w-3 text-accent" /> : <ArrowDownRight className="h-3 w-3 text-destructive" />}
-              <span className={`text-[10px] font-medium ${s.up ? 'text-accent' : 'text-destructive'}`}>{s.change}</span>
-              <span className="text-[10px] text-muted-foreground">vs ontem</span>
             </div>
           </Card>
         ))}
@@ -70,96 +249,116 @@ export function DashboardPage() {
       {/* Charts */}
       <div className="grid lg:grid-cols-3 gap-3">
         <Card className="lg:col-span-2 p-3">
-          <p className="text-xs font-semibold mb-3">Entrada vs Saída (toneladas)</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <AreaChart data={entradaSaida}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 3%, 84%)" />
-              <XAxis dataKey="dia" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip contentStyle={{ fontSize: 11 }} />
-              <Area type="monotone" dataKey="entrada" stroke="hsl(0, 72%, 40%)" fill="hsl(0, 72%, 40%)" fillOpacity={0.15} name="Entrada" />
-              <Area type="monotone" dataKey="saida" stroke="hsl(145, 50%, 32%)" fill="hsl(145, 50%, 32%)" fillOpacity={0.15} name="Saída" />
-            </AreaChart>
-          </ResponsiveContainer>
+          <p className="text-xs font-semibold mb-3">Pesagens últimos 7 dias (kg)</p>
+          {loading ? (
+            <Skeleton className="h-[200px] w-full" />
+          ) : serieHasData ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={serie}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="dia" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip
+                  contentStyle={{ fontSize: 11 }}
+                  formatter={(v: number) => [`${fmtKg(v)} kg`, 'Peso']}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="peso"
+                  stroke="hsl(var(--primary))"
+                  fill="hsl(var(--primary))"
+                  fillOpacity={0.18}
+                  name="Peso"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center text-xs text-muted-foreground">
+              Nenhum dado no período
+            </div>
+          )}
         </Card>
 
         <Card className="p-3">
-          <p className="text-xs font-semibold mb-3">Estoque por Material</p>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie data={materiaisData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} dataKey="value" paddingAngle={2}>
-                {materiaisData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
-              </Pie>
-              <Tooltip contentStyle={{ fontSize: 11 }} formatter={(v: number) => `${v}t`} />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
-            {materiaisData.map((m) => (
-              <div key={m.name} className="flex items-center gap-1">
-                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: m.color }} />
-                <span className="text-[10px] text-muted-foreground">{m.name}</span>
+          <p className="text-xs font-semibold mb-3">Materiais (30 dias)</p>
+          {loading ? (
+            <Skeleton className="h-[200px] w-full" />
+          ) : materiais.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={materiais}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={75}
+                    dataKey="value"
+                    paddingAngle={2}
+                  >
+                    {materiais.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ fontSize: 11 }}
+                    formatter={(v: number) => [`${fmtKg(v)} kg`, 'Peso']}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                {materiais.map((m) => (
+                  <div key={m.name} className="flex items-center gap-1">
+                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: m.color }} />
+                    <span className="text-[10px] text-muted-foreground">{m.name}</span>
+                  </div>
+                ))}
               </div>
+            </>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center text-xs text-muted-foreground">
+              Nenhum dado no período
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Top Clientes */}
+      <Card className="p-3">
+        <p className="text-xs font-semibold mb-2">Top 5 clientes (últimos 30 dias)</p>
+        {loading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-6 w-full" />
             ))}
           </div>
-        </Card>
-      </div>
-
-      {/* Bottom row */}
-      <div className="grid lg:grid-cols-2 gap-3">
-        <Card className="p-3">
-          <p className="text-xs font-semibold mb-2">Top Clientes do Mês</p>
-          <table className="w-full table-dense">
-            <thead><tr className="border-b">
-              <th className="text-left text-muted-foreground font-medium">Cliente</th>
-              <th className="text-right text-muted-foreground font-medium">Peso</th>
-              <th className="text-right text-muted-foreground font-medium">Tickets</th>
-            </tr></thead>
+        ) : topClientes.length > 0 ? (
+          <table className="w-full table-dense text-xs">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left text-muted-foreground font-medium py-1">Cliente</th>
+                <th className="text-right text-muted-foreground font-medium py-1">Total kg</th>
+                <th className="text-right text-muted-foreground font-medium py-1">Total R$</th>
+                <th className="text-right text-muted-foreground font-medium py-1">Tickets</th>
+              </tr>
+            </thead>
             <tbody>
-              {topClientes.map((c, i) => (
-                <tr key={i} className="border-b border-border/50">
-                  <td className="font-medium">{c.nome}</td>
-                  <td className="text-right font-mono">{c.peso}</td>
-                  <td className="text-right">{c.tickets}</td>
+              {topClientes.map((c) => (
+                <tr key={c.client_id} className="border-b border-border/50">
+                  <td className="font-medium py-1 truncate max-w-[260px]">{c.nome}</td>
+                  <td className="text-right font-mono py-1">{fmtKg(c.peso)}</td>
+                  <td className="text-right font-mono py-1">{fmtBRL(c.valor)}</td>
+                  <td className="text-right py-1">{c.tickets}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </Card>
-
-        <Card className="p-3">
-          <p className="text-xs font-semibold mb-2">Últimas Pesagens</p>
-          <table className="w-full table-dense">
-            <thead><tr className="border-b">
-              <th className="text-left text-muted-foreground font-medium">Ticket</th>
-              <th className="text-left text-muted-foreground font-medium">Placa</th>
-              <th className="text-left text-muted-foreground font-medium">Material</th>
-              <th className="text-right text-muted-foreground font-medium">Líquido</th>
-              <th className="text-right text-muted-foreground font-medium">Status</th>
-            </tr></thead>
-            <tbody>
-              {[
-                { ticket: '#1847', placa: 'ABC-1234', material: 'Ferro', liquido: '3.2t', status: 'Finalizado' },
-                { ticket: '#1846', placa: 'DEF-5678', material: 'Cobre', liquido: '0.8t', status: 'Aberto' },
-                { ticket: '#1845', placa: 'GHI-9012', material: 'Alumínio', liquido: '1.5t', status: 'Finalizado' },
-                { ticket: '#1844', placa: 'JKL-3456', material: 'Mista', liquido: '4.1t', status: 'Pendente' },
-                { ticket: '#1843', placa: 'MNO-7890', material: 'Inox', liquido: '0.6t', status: 'Finalizado' },
-              ].map((p) => (
-                <tr key={p.ticket} className="border-b border-border/50">
-                  <td className="font-mono font-medium">{p.ticket}</td>
-                  <td>{p.placa}</td>
-                  <td>{p.material}</td>
-                  <td className="text-right font-mono">{p.liquido}</td>
-                  <td className="text-right">
-                    <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                      p.status === 'Finalizado' ? 'badge-finalizado' : p.status === 'Aberto' ? 'badge-aberto' : 'badge-pendente'
-                    }`}>{p.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
-      </div>
+        ) : (
+          <div className="h-20 flex items-center justify-center text-xs text-muted-foreground">
+            Nenhum dado no período
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
