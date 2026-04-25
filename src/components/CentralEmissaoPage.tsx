@@ -498,7 +498,6 @@ export function CentralEmissaoPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-8"></TableHead>
-                    <TableHead className="w-8"></TableHead>
                     <TableHead>Destinatário (extrato)</TableHead>
                     <TableHead>Cliente Sistema</TableHead>
                     <TableHead>CPF/CNPJ</TableHead>
