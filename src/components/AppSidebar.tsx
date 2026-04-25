@@ -6,14 +6,14 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, MessageSquare, Scale, Warehouse, FileText,
   Users, Wallet, Calculator, BarChart3, Shield, ScrollText, Settings,
-  ChevronLeft, ChevronRight, LogOut, Bot, HardHat,
+  ChevronLeft, ChevronRight, LogOut, Bot, HardHat, FileSpreadsheet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '@/assets/logo-sucata-uniao.jpg';
 
 const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard, MessageSquare, Scale, Warehouse, FileText,
-  Users, Wallet, Calculator, BarChart3, Shield, ScrollText, Settings,
+  Users, Wallet, Calculator, BarChart3, Shield, ScrollText, Settings, FileSpreadsheet,
 };
 
 interface AppSidebarProps {

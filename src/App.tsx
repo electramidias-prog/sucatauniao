@@ -18,6 +18,7 @@ import { CalculadoraMTRPage } from "@/components/CalculadoraMTRPage";
 import { RelatoriosPage } from "@/components/RelatoriosPage";
 import { AuditoriaPage } from "@/components/AuditoriaPage";
 import { ConfiguracoesPage } from "@/components/ConfiguracoesPage";
+import { CentralEmissaoPage } from "@/components/CentralEmissaoPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ function AuthenticatedApp() {
         <Route path="/clientes" element={<ClientsPage />} />
         <Route path="/conta-corrente" element={<ContaCorrentePage />} />
         <Route path="/mtr" element={<CalculadoraMTRPage />} />
+        <Route path="/central-emissao" element={<CentralEmissaoPage />} />
         <Route path="/relatorios" element={<RelatoriosPage />} />
         <Route path="/usuarios" element={<UsersPage />} />
         <Route path="/auditoria" element={<AuditoriaPage />} />
