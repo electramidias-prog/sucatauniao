@@ -143,37 +143,67 @@ export type Database = {
       }
       client_transactions: {
         Row: {
+          amortecedor_kg: number | null
           amount: number
           client_id: string
           created_at: string
           created_by: string | null
           description: string
+          fundido_kg: number | null
           id: string
+          limaria_kg: number | null
+          mista_kg: number | null
+          pesada_kg: number | null
+          price_used: number | null
           settlement_id: string | null
           status: string
+          ticket_number: number | null
+          total_kg: number | null
+          transaction_date: string | null
           type: string
+          value: number | null
         }
         Insert: {
+          amortecedor_kg?: number | null
           amount?: number
           client_id: string
           created_at?: string
           created_by?: string | null
           description: string
+          fundido_kg?: number | null
           id?: string
+          limaria_kg?: number | null
+          mista_kg?: number | null
+          pesada_kg?: number | null
+          price_used?: number | null
           settlement_id?: string | null
           status?: string
+          ticket_number?: number | null
+          total_kg?: number | null
+          transaction_date?: string | null
           type?: string
+          value?: number | null
         }
         Update: {
+          amortecedor_kg?: number | null
           amount?: number
           client_id?: string
           created_at?: string
           created_by?: string | null
           description?: string
+          fundido_kg?: number | null
           id?: string
+          limaria_kg?: number | null
+          mista_kg?: number | null
+          pesada_kg?: number | null
+          price_used?: number | null
           settlement_id?: string | null
           status?: string
+          ticket_number?: number | null
+          total_kg?: number | null
+          transaction_date?: string | null
           type?: string
+          value?: number | null
         }
         Relationships: [
           {
@@ -315,6 +345,30 @@ export type Database = {
         }
         Relationships: []
       }
+      material_prices: {
+        Row: {
+          id: string
+          material_type: string
+          price_per_kg: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          material_type: string
+          price_per_kg?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          material_type?: string
+          price_per_kg?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       payment_settlements: {
         Row: {
           client_id: string
@@ -425,11 +479,15 @@ export type Database = {
           client_id: string
           created_at: string
           created_by: string | null
+          discount_type: string | null
+          discount_value: number | null
+          final_net_weight: number | null
           gross_weight: number
           id: string
           material_type: string
           net_weight: number | null
           notes: string | null
+          photo_url: string | null
           price_per_kg: number
           settlement_id: string | null
           status: string
@@ -443,11 +501,15 @@ export type Database = {
           client_id: string
           created_at?: string
           created_by?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
+          final_net_weight?: number | null
           gross_weight?: number
           id?: string
           material_type?: string
           net_weight?: number | null
           notes?: string | null
+          photo_url?: string | null
           price_per_kg?: number
           settlement_id?: string | null
           status?: string
@@ -461,11 +523,15 @@ export type Database = {
           client_id?: string
           created_at?: string
           created_by?: string | null
+          discount_type?: string | null
+          discount_value?: number | null
+          final_net_weight?: number | null
           gross_weight?: number
           id?: string
           material_type?: string
           net_weight?: number | null
           notes?: string | null
+          photo_url?: string | null
           price_per_kg?: number
           settlement_id?: string | null
           status?: string
