@@ -80,6 +80,35 @@ const maskDoc = (doc: string) => {
 const money = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('pt-BR');
 
+// ─── Input masks ───
+const maskCPF = (v: string) => {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  return d
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+};
+const maskCNPJ = (v: string) => {
+  const d = v.replace(/\D/g, '').slice(0, 14);
+  return d
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+};
+const maskPhone = (v: string) => {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 10) {
+    return d
+      .replace(/^(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{4})(\d{1,4})$/, '$1-$2');
+  }
+  return d
+    .replace(/^(\d{2})(\d)/, '($1) $2')
+    .replace(/(\d{5})(\d{1,4})$/, '$1-$2');
+};
+const maskDocument = (v: string, type: string) => (type === 'cnpj' ? maskCNPJ(v) : maskCPF(v));
+
 // ═══════════════════════════════════════
 // ─── MAIN COMPONENT ───
 // ═══════════════════════════════════════
@@ -133,7 +162,7 @@ export function ClientsPage() {
     } else {
       const { error } = await supabase.from('clients').insert(payload as any);
       if (error) { toast.error('Erro: ' + error.message); return; }
-      toast.success('Cliente cadastrado!');
+      toast.success('Cliente cadastrado com sucesso!');
     }
     setDialogOpen(false); setEditingId(null); setForm(EMPTY_FORM); fetchClients();
   };
@@ -221,7 +250,7 @@ export function ClientsPage() {
                     <SelectContent><SelectItem value="cpf">CPF</SelectItem><SelectItem value="cnpj">CNPJ</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div><Label className="text-xs">CPF/CNPJ *</Label><Input value={form.document_number} onChange={e => updateField('document_number', e.target.value)} className="h-8 text-xs" /></div>
+                <div><Label className="text-xs">CPF/CNPJ *</Label><Input value={form.document_number} onChange={e => updateField('document_number', maskDocument(e.target.value, form.document_type))} className="h-8 text-xs" placeholder={form.document_type === 'cnpj' ? '00.000.000/0000-00' : '000.000.000-00'} /></div>
                 <div><Label className="text-xs">RG</Label><Input value={form.rg} onChange={e => updateField('rg', e.target.value)} className="h-8 text-xs" /></div>
                 <div><Label className="text-xs">Data Nasc.</Label><Input type="date" value={form.birth_date} onChange={e => updateField('birth_date', e.target.value)} className="h-8 text-xs" /></div>
                 <div><Label className="text-xs">Placa Veículo</Label><Input value={form.vehicle_plate} onChange={e => updateField('vehicle_plate', e.target.value)} className="h-8 text-xs" placeholder="ABC-1234" /></div>
@@ -243,16 +272,16 @@ export function ClientsPage() {
                     <SelectContent><SelectItem value="ativo">Ativo</SelectItem><SelectItem value="inativo">Inativo</SelectItem><SelectItem value="bloqueado">Bloqueado</SelectItem></SelectContent>
                   </Select>
                 </div>
-                <div><Label className="text-xs">Email</Label><Input value={form.email} onChange={e => updateField('email', e.target.value)} className="h-8 text-xs" /></div>
-                <div><Label className="text-xs">Telefone</Label><Input value={form.phone} onChange={e => updateField('phone', e.target.value)} className="h-8 text-xs" /></div>
-                <div><Label className="text-xs">WhatsApp</Label><Input value={form.whatsapp} onChange={e => updateField('whatsapp', e.target.value)} className="h-8 text-xs" /></div>
+                <div><Label className="text-xs">Email</Label><Input value={form.email} onChange={e => updateField('email', e.target.value)} className="h-8 text-xs" placeholder="email@exemplo.com" /></div>
+                <div><Label className="text-xs">Telefone</Label><Input value={form.phone} onChange={e => updateField('phone', maskPhone(e.target.value))} className="h-8 text-xs" placeholder="(00) 00000-0000" /></div>
+                <div><Label className="text-xs">WhatsApp</Label><Input value={form.whatsapp} onChange={e => updateField('whatsapp', maskPhone(e.target.value))} className="h-8 text-xs" placeholder="(00) 00000-0000" /></div>
                 <div><Label className="text-xs">Cidade</Label><Input value={form.address_city} onChange={e => updateField('address_city', e.target.value)} className="h-8 text-xs" /></div>
                 <div><Label className="text-xs">UF</Label><Input value={form.address_state} onChange={e => updateField('address_state', e.target.value)} className="h-8 text-xs" maxLength={2} /></div>
                 <div><Label className="text-xs">CEP</Label><Input value={form.address_zip} onChange={e => updateField('address_zip', e.target.value)} className="h-8 text-xs" /></div>
                 <div className="col-span-2"><Label className="text-xs">Observações</Label><Textarea value={form.notes} onChange={e => updateField('notes', e.target.value)} className="text-xs min-h-[50px]" /></div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" size="sm" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+                <Button variant="outline" size="sm" onClick={() => { setDialogOpen(false); setEditingId(null); setForm(EMPTY_FORM); }}>Cancelar</Button>
                 <Button size="sm" onClick={handleSave}>{editingId ? 'Salvar' : 'Cadastrar'}</Button>
               </div>
             </DialogContent>
@@ -422,6 +451,7 @@ function ClientProfile({ client, onBack, userId }: { client: Client; onBack: () 
                 <div><span className="text-muted-foreground">Email:</span> <span className="font-medium">{c.email || '—'}</span></div>
                 <div><span className="text-muted-foreground">Telefone:</span> <span className="font-medium">{c.phone || '—'}</span></div>
                 <div><span className="text-muted-foreground">WhatsApp:</span> <span className="font-medium">{c.whatsapp || '—'}</span></div>
+                <div><span className="text-muted-foreground">Cliente desde:</span> <span className="font-medium">{c.created_at ? fmtDate(c.created_at) : '—'}</span></div>
               </div>
             </CardContent></Card>
             <Card><CardContent className="p-4 space-y-3">
