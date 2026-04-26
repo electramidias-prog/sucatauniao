@@ -534,7 +534,7 @@ export function BalancaPage() {
       </Card>
 
       {/* ═══════ NEW TICKET DIALOG ═══════ */}
-      <Dialog open={showNewTicket} onOpenChange={(open) => { if (!open) resetNewTicket(); }}>
+      <Dialog open={showNewTicket} onOpenChange={(open) => { setShowNewTicket(open); if (!open) resetNewTicket(); }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
