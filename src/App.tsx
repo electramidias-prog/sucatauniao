@@ -14,7 +14,6 @@ import { UsersPage } from "@/components/UsersPage";
 import { ContaCorrentePage } from "@/components/ContaCorrentePage";
 import { EstoqueFisicoPage } from "@/components/EstoqueFisicoPage";
 import { EstoqueFiscalPage } from "@/components/EstoqueFiscalPage";
-import { CalculadoraMTRPage } from "@/components/CalculadoraMTRPage";
 import { RelatoriosPage } from "@/components/RelatoriosPage";
 import { AuditoriaPage } from "@/components/AuditoriaPage";
 import { ConfiguracoesPage } from "@/components/ConfiguracoesPage";
@@ -40,13 +39,18 @@ function AuthenticatedApp() {
     <AppLayout>
       <Routes>
         <Route path="/" element={<DashboardPage />} />
-        <Route path="/chat-equipe" element={<PlaceholderPage title="Chat da Equipe" />} />
+        <Route path="/chat" element={<PlaceholderPage title="Chat da Equipe" />} />
         <Route path="/balanca" element={<BalancaPage />} />
         <Route path="/estoque-fisico" element={<EstoqueFisicoPage />} />
         <Route path="/estoque-fiscal" element={<EstoqueFiscalPage />} />
         <Route path="/clientes" element={<ClientsPage />} />
         <Route path="/conta-corrente" element={<ContaCorrentePage />} />
-        <Route path="/mtr" element={<CalculadoraMTRPage />} />
+        <Route path="/contas-pagar" element={<PlaceholderPage title="Contas a Pagar" />} />
+        <Route path="/documentos" element={<PlaceholderPage title="Documentos da Empresa" />} />
+        <Route path="/funcionarios" element={<PlaceholderPage title="Funcionários e NRs" />} />
+        <Route path="/epis" element={<PlaceholderPage title="EPIs" />} />
+        <Route path="/maquinas" element={<PlaceholderPage title="Máquinas e Laudos" />} />
+        <Route path="/dds" element={<PlaceholderPage title="DDS" />} />
         <Route path="/central-emissao" element={<CentralEmissaoPage />} />
         <Route path="/relatorios" element={<RelatoriosPage />} />
         <Route path="/usuarios" element={<UsersPage />} />
