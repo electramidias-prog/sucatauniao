@@ -18,8 +18,8 @@ export const menuSections: MenuSection[] = [
   {
     title: 'Principal',
     items: [
-      { label: 'Dashboard', iconName: 'LayoutDashboard', path: '/', roles: ALL_ROLES },
-      { label: 'Chat da Equipe', iconName: 'MessageSquare', path: '/chat-equipe', roles: ALL_ROLES },
+      { label: 'Painel', iconName: 'LayoutDashboard', path: '/', roles: ALL_ROLES },
+      { label: 'Chat da Equipe', iconName: 'MessageSquare', path: '/chat', roles: ALL_ROLES },
     ],
   },
   {
@@ -36,7 +36,17 @@ export const menuSections: MenuSection[] = [
     items: [
       { label: 'Clientes', iconName: 'Users', path: '/clientes', roles: ['admin', 'financeiro', 'operador_balanca'] },
       { label: 'Conta Corrente', iconName: 'Wallet', path: '/conta-corrente', roles: ['admin', 'financeiro'] },
-      { label: 'Calculadora MTR', iconName: 'Calculator', path: '/mtr', roles: ['admin', 'financeiro', 'contador'] },
+      { label: 'Contas a Pagar', iconName: 'Wallet', path: '/contas-pagar', roles: ['admin', 'financeiro'] },
+    ],
+  },
+  {
+    title: 'Compliance & RH',
+    items: [
+      { label: 'Documentos da Empresa', iconName: 'FileText', path: '/documentos', roles: ['admin', 'financeiro'] },
+      { label: 'Funcionários e NRs', iconName: 'Users', path: '/funcionarios', roles: ['admin', 'financeiro'] },
+      { label: 'EPIs', iconName: 'Shield', path: '/epis', roles: ['admin', 'financeiro', 'conferente'] },
+      { label: 'Máquinas e Laudos', iconName: 'Settings', path: '/maquinas', roles: ['admin', 'financeiro', 'conferente'] },
+      { label: 'DDS', iconName: 'ScrollText', path: '/dds', roles: ['admin', 'financeiro', 'conferente', 'operador_balanca'] },
     ],
   },
   {
