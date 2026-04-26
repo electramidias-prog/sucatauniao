@@ -233,7 +233,16 @@ export function ContaCorrentePage() {
       </div>
 
       {/* Add Debit/Credit Dialog */}
-      <Dialog open={debitDialog} onOpenChange={setDebitDialog}>
+      <Dialog
+        open={debitDialog}
+        onOpenChange={(o) => {
+          setDebitDialog(o);
+          if (!o) {
+            setSelectedClientId('');
+            setDebitForm({ description: '', amount: '', type: 'debito' });
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Lançar Débito / Crédito</DialogTitle></DialogHeader>
           <div className="space-y-3">

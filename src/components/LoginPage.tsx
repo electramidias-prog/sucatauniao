@@ -28,6 +28,7 @@ export function LoginPage() {
         <div className="bg-card rounded-lg shadow-2xl border p-8">
           <div className="flex flex-col items-center mb-8">
             <img src={logo} alt="Sucata União" className="h-20 w-auto mb-3" />
+            <h1 className="text-base font-semibold text-foreground">Sucata União</h1>
             <p className="text-sm text-muted-foreground">Sistema de Gestão</p>
           </div>
 
