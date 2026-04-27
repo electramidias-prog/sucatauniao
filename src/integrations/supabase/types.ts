@@ -396,6 +396,51 @@ export type Database = {
         }
         Relationships: []
       }
+      company_documents: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          expiry_date: string | null
+          file_url: string | null
+          id: string
+          issue_date: string | null
+          name: string
+          obs: string | null
+          protocol_number: string | null
+          responsible: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          expiry_date?: string | null
+          file_url?: string | null
+          id?: string
+          issue_date?: string | null
+          name: string
+          obs?: string | null
+          protocol_number?: string | null
+          responsible?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          expiry_date?: string | null
+          file_url?: string | null
+          id?: string
+          issue_date?: string | null
+          name?: string
+          obs?: string | null
+          protocol_number?: string | null
+          responsible?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       material_prices: {
         Row: {
           id: string
