@@ -19,6 +19,7 @@ import { AuditoriaPage } from "@/components/AuditoriaPage";
 import { ConfiguracoesPage } from "@/components/ConfiguracoesPage";
 import { CentralEmissaoPage } from "@/components/CentralEmissaoPage";
 import { ContasPagarPage } from "@/components/ContasPagarPage";
+import { DocumentosPage } from "@/components/DocumentosPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -47,7 +48,7 @@ function AuthenticatedApp() {
         <Route path="/clientes" element={<ClientsPage />} />
         <Route path="/conta-corrente" element={<ContaCorrentePage />} />
         <Route path="/contas-pagar" element={<ContasPagarPage />} />
-        <Route path="/documentos" element={<PlaceholderPage title="Documentos da Empresa" />} />
+        <Route path="/documentos" element={<DocumentosPage />} />
         <Route path="/funcionarios" element={<PlaceholderPage title="Funcionários e NRs" />} />
         <Route path="/epis" element={<PlaceholderPage title="EPIs" />} />
         <Route path="/maquinas" element={<PlaceholderPage title="Máquinas e Laudos" />} />
