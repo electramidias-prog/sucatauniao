@@ -92,7 +92,8 @@ function visualStatus(b: Bill): Visual {
 }
 
 export function ContasPagarPage() {
-  const { user, role } = useAuth() as any;
+  const { user } = useAuth();
+  const role = user?.role;
   const isAdmin = role === "admin";
   const canEdit = isAdmin || role === "financeiro";
 
