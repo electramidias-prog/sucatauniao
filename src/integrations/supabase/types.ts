@@ -50,6 +50,57 @@ export type Database = {
         }
         Relationships: []
       }
+      bills: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string
+          due_date: string
+          id: string
+          obs: string | null
+          paid_amount: number | null
+          paid_at: string | null
+          payment_method: string | null
+          recurrence: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          due_date: string
+          id?: string
+          obs?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          payment_method?: string | null
+          recurrence?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          due_date?: string
+          id?: string
+          obs?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          payment_method?: string | null
+          recurrence?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       client_change_requests: {
         Row: {
           client_id: string
