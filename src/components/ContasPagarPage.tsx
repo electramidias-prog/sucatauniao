@@ -24,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Pencil, Trash2, Plus, CheckCircle2, Download } from "lucide-react";
+import { Pencil, Trash2, Plus, CheckCircle2, Download, Settings, X } from "lucide-react";
 
 type Recurrence = "unica" | "mensal" | "trimestral" | "anual";
 type BillStatus = "pendente" | "paga" | "vencida";
@@ -44,7 +44,16 @@ interface Bill {
   created_at: string;
 }
 
-const CATEGORIES = [
+const RECURRENCE_LABEL: Record<Recurrence, string> = {
+  unica: "Única",
+  mensal: "Mensal",
+  trimestral: "Trimestral",
+  anual: "Anual",
+};
+
+const PAYMENT_METHODS = ["PIX", "Boleto", "Débito", "Dinheiro"];
+
+const DEFAULT_CATEGORIES = [
   "Água",
   "Energia Elétrica",
   "Aluguel",
@@ -56,15 +65,6 @@ const CATEGORIES = [
   "Salários",
   "Outros",
 ];
-
-const RECURRENCE_LABEL: Record<Recurrence, string> = {
-  unica: "Única",
-  mensal: "Mensal",
-  trimestral: "Trimestral",
-  anual: "Anual",
-};
-
-const PAYMENT_METHODS = ["PIX", "Boleto", "Débito", "Dinheiro"];
 
 const fmtBRL = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -117,6 +117,58 @@ export function ContasPagarPage() {
     recurrence: "unica" as Recurrence,
     obs: "",
   });
+  const [installments, setInstallments] = useState(1);
+
+  // Custom categories
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [catModalOpen, setCatModalOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+
+  const allCategories = useMemo(() => {
+    const merged = [...DEFAULT_CATEGORIES];
+    for (const c of customCategories) {
+      if (!merged.includes(c)) merged.push(c);
+    }
+    return merged;
+  }, [customCategories]);
+
+  const loadCustomCategories = async () => {
+    const { data } = await supabase
+      .from("system_settings")
+      .select("value")
+      .eq("key", "bill_categories")
+      .maybeSingle();
+    if (data?.value && Array.isArray(data.value)) {
+      setCustomCategories(data.value as string[]);
+    }
+  };
+
+  const saveCustomCategory = async () => {
+    const name = newCatName.trim();
+    if (!name) return;
+    if (allCategories.includes(name)) {
+      toast.error("Categoria já existe");
+      return;
+    }
+    const updated = [...customCategories, name];
+    const { error } = await supabase
+      .from("system_settings")
+      .upsert({ key: "bill_categories", value: updated as any, updated_by: user?.id }, { onConflict: "key" });
+    if (error) return toast.error(error.message);
+    setCustomCategories(updated);
+    setNewCatName("");
+    toast.success("Categoria adicionada");
+  };
+
+  const removeCustomCategory = async (cat: string) => {
+    const updated = customCategories.filter((c) => c !== cat);
+    const { error } = await supabase
+      .from("system_settings")
+      .upsert({ key: "bill_categories", value: updated as any, updated_by: user?.id }, { onConflict: "key" });
+    if (error) return toast.error(error.message);
+    setCustomCategories(updated);
+    toast.success("Categoria removida");
+  };
 
   const [payOpen, setPayOpen] = useState(false);
   const [payTarget, setPayTarget] = useState<Bill | null>(null);
@@ -143,6 +195,7 @@ export function ContasPagarPage() {
 
   useEffect(() => {
     load();
+    loadCustomCategories();
   }, []);
 
   const filtered = useMemo(() => {
@@ -198,6 +251,7 @@ export function ContasPagarPage() {
       obs: "",
     });
     setEditing(null);
+    setInstallments(1);
   };
 
   const openEdit = (b: Bill) => {
@@ -218,24 +272,43 @@ export function ContasPagarPage() {
       toast.error("Preencha descrição, valor e vencimento");
       return;
     }
-    const payload = {
-      description: form.description.trim(),
-      category: form.category,
-      amount: Number(form.amount),
-      due_date: form.due_date,
-      recurrence: form.recurrence,
-      obs: form.obs || null,
-    };
     if (editing) {
+      const payload = {
+        description: form.description.trim(),
+        category: form.category,
+        amount: Number(form.amount),
+        due_date: form.due_date,
+        recurrence: form.recurrence,
+        obs: form.obs || null,
+      };
       const { error } = await supabase.from("bills").update(payload).eq("id", editing.id);
       if (error) return toast.error(error.message);
       toast.success("Conta atualizada");
     } else {
-      const { error } = await supabase
-        .from("bills")
-        .insert({ ...payload, status: "pendente", created_by: user?.id });
+      const numParcelas = form.recurrence === "mensal" && installments > 1 ? installments : 1;
+      const baseAmount = Number(form.amount);
+      const rows = [];
+      for (let i = 0; i < numParcelas; i++) {
+        const d = new Date(form.due_date + "T00:00:00");
+        d.setMonth(d.getMonth() + i);
+        const dueDate = d.toISOString().slice(0, 10);
+        const desc = numParcelas > 1
+          ? `PARCELA ${i + 1}/${numParcelas} — ${form.description.trim()}`
+          : form.description.trim();
+        rows.push({
+          description: desc,
+          category: form.category,
+          amount: baseAmount,
+          due_date: dueDate,
+          recurrence: "unica" as Recurrence,
+          obs: form.obs || null,
+          status: "pendente",
+          created_by: user?.id,
+        });
+      }
+      const { error } = await supabase.from("bills").insert(rows);
       if (error) return toast.error(error.message);
-      toast.success("Conta criada");
+      toast.success(numParcelas > 1 ? `${numParcelas} parcelas criadas` : "Conta criada");
     }
     setOpenNew(false);
     resetForm();
@@ -397,12 +470,20 @@ export function ContasPagarPage() {
               <SelectTrigger className="h-8 w-48 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas</SelectItem>
-                {CATEGORIES.map((c) => (
+                {allCategories.map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+          {isAdmin && (
+            <div className="space-y-1">
+              <Label className="text-xs">&nbsp;</Label>
+              <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setCatModalOpen(true)} title="Gerenciar categorias">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
           <div className="space-y-1">
             <Label className="text-xs">Mês</Label>
             <Input
@@ -500,7 +581,7 @@ export function ContasPagarPage() {
                 <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    {allCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -524,6 +605,30 @@ export function ContasPagarPage() {
                 </Select>
               </div>
             </div>
+            {!editing && form.recurrence === "mensal" && (
+              <div className="space-y-1">
+                <Label className="text-xs">Número de Parcelas</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={120}
+                  value={installments}
+                  onChange={(e) => setInstallments(Math.max(1, Math.min(120, Number(e.target.value) || 1)))}
+                />
+                {installments > 1 && form.amount && form.due_date && (
+                  <div className="text-xs text-muted-foreground bg-muted p-2 rounded mt-1">
+                    Serão criadas <strong>{installments} parcelas</strong> de{" "}
+                    <strong>{fmtBRL(Number(form.amount))}</strong>, de{" "}
+                    {new Date(form.due_date + "T00:00:00").toLocaleDateString("pt-BR", { month: "long", year: "numeric" })} até{" "}
+                    {(() => {
+                      const d = new Date(form.due_date + "T00:00:00");
+                      d.setMonth(d.getMonth() + installments - 1);
+                      return d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
             <div className="space-y-1">
               <Label className="text-xs">Observação</Label>
               <Textarea rows={2} value={form.obs} onChange={(e) => setForm({ ...form, obs: e.target.value })} />
@@ -568,6 +673,50 @@ export function ContasPagarPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setPayOpen(false)}>Cancelar</Button>
             <Button onClick={confirmPay}>Confirmar Pagamento</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Categorias */}
+      <Dialog open={catModalOpen} onOpenChange={setCatModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gerenciar Categorias</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nome da nova categoria"
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && saveCustomCategory()}
+              />
+              <Button size="sm" onClick={saveCustomCategory}>Adicionar</Button>
+            </div>
+            <div className="text-xs text-muted-foreground">Categorias padrão:</div>
+            <div className="flex flex-wrap gap-1">
+              {DEFAULT_CATEGORIES.map((c) => (
+                <Badge key={c} variant="secondary" className="text-xs">{c}</Badge>
+              ))}
+            </div>
+            {customCategories.length > 0 && (
+              <>
+                <div className="text-xs text-muted-foreground">Categorias personalizadas:</div>
+                <div className="flex flex-wrap gap-1">
+                  {customCategories.map((c) => (
+                    <Badge key={c} variant="outline" className="text-xs flex items-center gap-1">
+                      {c}
+                      <button onClick={() => removeCustomCategory(c)} className="hover:text-destructive">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCatModalOpen(false)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
