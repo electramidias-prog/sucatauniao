@@ -6,7 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Upload, FileSpreadsheet, ArrowRight, Check, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, ArrowRight, Check, X, Loader2 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface ImportMappingDialogProps {
   open: boolean;
@@ -80,6 +81,7 @@ export function ImportMappingDialog({ open, onOpenChange, onComplete }: ImportMa
   const [mapping, setMapping] = useState<Record<number, string>>({});
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{ success: number; errors: number } | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const reset = () => {
     setStep('upload');
@@ -87,6 +89,7 @@ export function ImportMappingDialog({ open, onOpenChange, onComplete }: ImportMa
     setRows([]);
     setMapping({});
     setImportResult(null);
+    setLoading(false);
   };
 
   const handleClose = () => {
@@ -98,27 +101,52 @@ export function ImportMappingDialog({ open, onOpenChange, onComplete }: ImportMa
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const text = await file.text();
-    // Try to detect separator
-    const firstLine = text.split('\n')[0];
-    const separator = firstLine.includes('\t') ? '\t' : firstLine.includes(';') ? ';' : ',';
-
-    const lines = text.split('\n').filter(l => l.trim());
-    if (lines.length < 2) { toast.error('Arquivo vazio ou sem dados'); return; }
-
-    const hdrs = lines[0].split(separator).map(h => h.trim().replace(/^"|"$/g, ''));
-    const dataRows = lines.slice(1).map(line => line.split(separator).map(c => c.trim().replace(/^"|"$/g, '')));
-
-    setHeaders(hdrs);
-    setRows(dataRows);
-
-    // Auto-map headers
-    const autoMapping: Record<number, string> = {};
-    hdrs.forEach((h, i) => { autoMapping[i] = autoMap(h); });
-    setMapping(autoMapping);
-    setStep('mapping');
-
+    setLoading(true);
     if (fileInputRef.current) fileInputRef.current.value = '';
+
+    try {
+      const isExcel = /\.(xlsx?|xls)$/i.test(file.name);
+
+      let hdrs: string[] = [];
+      let dataRows: string[][] = [];
+
+      if (isExcel) {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(new Uint8Array(buffer), {
+          type: 'array',
+          cellDates: true,
+          cellNF: false,
+          cellText: false,
+          sheetRows: 501,
+        });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData: string[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        if (jsonData.length < 2) { toast.error('Arquivo vazio ou sem dados'); setLoading(false); return; }
+        hdrs = jsonData[0].map(h => String(h).trim());
+        dataRows = jsonData.slice(1, 501).filter(r => r.some(c => String(c).trim())).map(r => r.map(c => String(c).trim()));
+      } else {
+        const text = await file.text();
+        const firstLine = text.split('\n')[0];
+        const separator = firstLine.includes('\t') ? '\t' : firstLine.includes(';') ? ';' : ',';
+        const lines = text.split('\n').filter(l => l.trim());
+        if (lines.length < 2) { toast.error('Arquivo vazio ou sem dados'); setLoading(false); return; }
+        hdrs = lines[0].split(separator).map(h => h.trim().replace(/^"|"$/g, ''));
+        dataRows = lines.slice(1, 501).map(line => line.split(separator).map(c => c.trim().replace(/^"|"$/g, '')));
+      }
+
+      setHeaders(hdrs);
+      setRows(dataRows);
+
+      const autoMapping: Record<number, string> = {};
+      hdrs.forEach((h, i) => { autoMapping[i] = autoMap(h); });
+      setMapping(autoMapping);
+      setStep('mapping');
+    } catch (err) {
+      console.error('Erro ao ler arquivo:', err);
+      toast.error('Não foi possível ler o arquivo. Verifique o formato e tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleImport = async () => {
@@ -167,7 +195,7 @@ export function ImportMappingDialog({ open, onOpenChange, onComplete }: ImportMa
   };
 
   const mappedCount = Object.values(mapping).filter(v => v !== 'ignorar').length;
-  const previewRows = rows.slice(0, 5);
+  const previewRows = rows.slice(0, 10);
 
   return (
     <Dialog open={open} onOpenChange={o => { if (!o) handleClose(); }}>
@@ -187,11 +215,12 @@ export function ImportMappingDialog({ open, onOpenChange, onComplete }: ImportMa
             </div>
             <div>
               <p className="text-sm font-medium">Selecione uma planilha para importar</p>
-              <p className="text-xs text-muted-foreground mt-1">Formatos aceitos: CSV, TXT (separados por vírgula, ponto-e-vírgula ou tab)</p>
+              <p className="text-xs text-muted-foreground mt-1">Formatos aceitos: XLSX, XLS, CSV, TXT</p>
             </div>
-            <input ref={fileInputRef} type="file" accept=".csv,.txt,.tsv" className="hidden" onChange={handleFileSelect} />
-            <Button onClick={() => fileInputRef.current?.click()}>
-              <Upload className="h-4 w-4 mr-2" /> Selecionar Arquivo
+            <input ref={fileInputRef} type="file" accept=".csv,.txt,.tsv,.xlsx,.xls" className="hidden" onChange={handleFileSelect} />
+            <Button onClick={() => fileInputRef.current?.click()} disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+              {loading ? 'Processando...' : 'Selecionar Arquivo'}
             </Button>
           </div>
         )}
@@ -238,7 +267,7 @@ export function ImportMappingDialog({ open, onOpenChange, onComplete }: ImportMa
         {step === 'preview' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">Pré-visualização (primeiros 5 registros)</p>
+              <p className="text-sm font-medium">Pré-visualização (primeiros {Math.min(10, rows.length)} de {rows.length} registros)</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => setStep('mapping')}>← Voltar ao Mapeamento</Button>
                 <Button size="sm" onClick={handleImport}>
