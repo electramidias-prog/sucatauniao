@@ -44,19 +44,6 @@ interface Bill {
   created_at: string;
 }
 
-const CATEGORIES = [
-  "Água",
-  "Energia Elétrica",
-  "Aluguel",
-  "Combustível",
-  "Manutenção de Equipamentos",
-  "Honorários Contábeis",
-  "Telefone/Internet",
-  "Impostos e Taxas",
-  "Salários",
-  "Outros",
-];
-
 const RECURRENCE_LABEL: Record<Recurrence, string> = {
   unica: "Única",
   mensal: "Mensal",
