@@ -72,10 +72,13 @@ const MATERIAL_LABELS: Record<string, string> = {
 };
 
 // ─── Helper fns ───
-const maskDoc = (doc: string) => {
-  if (doc.length === 11) return `${doc.slice(0,3)}.${doc.slice(3,6)}.${doc.slice(6,9)}-${doc.slice(9)}`;
-  if (doc.length === 14) return `${doc.slice(0,2)}.${doc.slice(2,5)}.${doc.slice(5,8)}/${doc.slice(8,12)}-${doc.slice(12)}`;
-  return doc;
+const formatDocument = (value: string, type: string): string => {
+  const d = value.replace(/\D/g, '');
+  if (type === 'cpf' && d.length >= 11) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9,11)}`;
+  if (type === 'cnpj' && d.length >= 14) return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12,14)}`;
+  if (d.length === 11) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;
+  if (d.length === 14) return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12)}`;
+  return value;
 };
 const money = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('pt-BR');
@@ -364,7 +367,7 @@ export function ClientsPage() {
                   {c.name}
                   {c.nickname && <span className="text-muted-foreground ml-1">({c.nickname})</span>}
                 </td>
-                <td className="font-mono">{maskDoc(c.document_number)}</td>
+                <td className="font-mono">{formatDocument(c.document_number, c.document_type)}</td>
                 <td className="font-mono">{c.vehicle_plate || '—'}</td>
                 <td>{c.address_city || '—'}</td>
                 <td className="text-center">
@@ -423,7 +426,7 @@ function ClientProfile({ client, onBack, userId }: { client: Client; onBack: () 
             {c.nickname && <span className="text-muted-foreground">({c.nickname})</span>}
             {c.operational_status === 'bloqueado' && <Badge className="badge-bloqueado"><AlertTriangle className="h-3 w-3 mr-1" />Bloqueado</Badge>}
           </div>
-          <p className="text-xs text-muted-foreground">{maskDoc(c.document_number)} · {c.address_city || 'Sem cidade'}, {c.address_state || 'MG'}</p>
+          <p className="text-xs text-muted-foreground">{formatDocument(c.document_number, c.document_type)} · {c.address_city || 'Sem cidade'}, {c.address_state || 'MG'}</p>
         </div>
         {c.portal_access_enabled && <Badge className="badge-finalizado"><Smartphone className="h-3 w-3 mr-1" />Portal Ativo</Badge>}
       </div>
@@ -444,7 +447,7 @@ function ClientProfile({ client, onBack, userId }: { client: Client; onBack: () 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div><span className="text-muted-foreground">Nome:</span> <span className="font-medium">{c.name}</span></div>
                 <div><span className="text-muted-foreground">Apelido:</span> <span className="font-medium">{c.nickname || '—'}</span></div>
-                <div><span className="text-muted-foreground">CPF/CNPJ:</span> <span className="font-mono font-medium">{maskDoc(c.document_number)}</span></div>
+                <div><span className="text-muted-foreground">CPF/CNPJ:</span> <span className="font-mono font-medium">{formatDocument(c.document_number, c.document_type)}</span></div>
                 <div><span className="text-muted-foreground">RG:</span> <span className="font-medium">{c.rg || '—'}</span></div>
                 <div><span className="text-muted-foreground">Nascimento:</span> <span className="font-medium">{c.birth_date ? fmtDate(c.birth_date) : '—'}</span></div>
                 <div><span className="text-muted-foreground">Placa:</span> <span className="font-mono font-medium">{c.vehicle_plate || '—'}</span></div>
