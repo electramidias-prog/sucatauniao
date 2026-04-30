@@ -1,0 +1,21 @@
+// Maps route paths to their lazy import functions for preloading
+export const routePreloadMap: Record<string, () => Promise<any>> = {
+  '/': () => import('@/components/DashboardPage'),
+  '/chat': () => import('@/components/PlaceholderPage'),
+  '/balanca': () => import('@/components/BalancaPage'),
+  '/estoque-fisico': () => import('@/components/EstoqueFisicoPage'),
+  '/estoque-fiscal': () => import('@/components/EstoqueFiscalPage'),
+  '/clientes': () => import('@/components/ClientsPage'),
+  '/conta-corrente': () => import('@/components/ContaCorrentePage'),
+  '/contas-pagar': () => import('@/components/ContasPagarPage'),
+  '/documentos': () => import('@/components/DocumentosPage'),
+  '/funcionarios': () => import('@/components/PlaceholderPage'),
+  '/epis': () => import('@/components/PlaceholderPage'),
+  '/maquinas': () => import('@/components/PlaceholderPage'),
+  '/dds': () => import('@/components/PlaceholderPage'),
+  '/central-emissao': () => import('@/components/CentralEmissaoPage'),
+  '/relatorios': () => import('@/components/RelatoriosPage'),
+  '/usuarios': () => import('@/components/UsersPage'),
+  '/auditoria': () => import('@/components/AuditoriaPage'),
+  '/configuracoes': () => import('@/components/ConfiguracoesPage'),
+};

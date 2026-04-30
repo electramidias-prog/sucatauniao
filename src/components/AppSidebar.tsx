@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '@/assets/logo-sucata-uniao.jpg';
+import { routePreloadMap } from '@/config/routePreload';
 
 const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard, MessageSquare, Scale, Warehouse, FileText,
@@ -65,6 +66,10 @@ export function AppSidebar({ onOpenAna, onOpenCarlinhos }: AppSidebarProps) {
                   <Link
                     key={item.path}
                     to={item.path}
+                    onMouseEnter={() => {
+                      const preload = routePreloadMap[item.path];
+                      if (preload) preload();
+                    }}
                     className={cn(
                       'flex items-center gap-2 px-2 py-1.5 rounded text-xs font-medium transition-colors',
                       active
