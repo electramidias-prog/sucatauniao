@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Search, Plus, DollarSign, Download, Wallet, Receipt } from 'lucide-react';
+import { Search, Plus, DollarSign, Download, Wallet, Receipt, MessageCircle } from 'lucide-react';
 
 interface ClientRow {
   id: string;
@@ -18,6 +18,8 @@ interface ClientRow {
   nickname: string | null;
   document_number: string;
   balance: number;
+  phone: string | null;
+  whatsapp: string | null;
 }
 
 interface LedgerEntry {
@@ -71,7 +73,7 @@ export function ContaCorrentePage() {
   const loadClients = useCallback(async () => {
     setLoading(true);
     const [clientsRes, txRes, weighRes] = await Promise.all([
-      supabase.from('clients').select('id, name, nickname, document_number').eq('status', 'ativo'),
+      supabase.from('clients').select('id, name, nickname, document_number, phone, whatsapp').eq('status', 'ativo'),
       supabase.from('client_transactions').select('client_id, type, value, amount'),
       supabase.from('weighings').select('client_id, total_value, status'),
     ]);
@@ -100,6 +102,8 @@ export function ContaCorrentePage() {
       nickname: c.nickname,
       document_number: c.document_number,
       balance: balances[c.id] || 0,
+      phone: c.phone || null,
+      whatsapp: c.whatsapp || null,
     }));
 
     rows.sort((a, b) => {
@@ -239,12 +243,12 @@ export function ContaCorrentePage() {
     await Promise.all([loadClients(), loadLedger(selectedId)]);
   };
 
-  const handleSaveVale = async () => {
+  const handleSaveVale = async (): Promise<void> => {
     if (!selectedId || !valeForm.amount || !valeForm.description) {
       toast.error('Preencha descrição e valor'); return;
     }
     const total = parseFloat(valeForm.amount);
-    const n = Math.max(1, parseInt(valeForm.installments) || 1);
+    const n = Math.max(1, Math.min(12, parseInt(valeForm.installments || '1') || 1));
     if (!total || total <= 0) { toast.error('Valor inválido'); return; }
 
     const each = +(total / n).toFixed(2);
@@ -262,12 +266,21 @@ export function ContaCorrentePage() {
     // Vale = adiantamento dado ao cliente => reduz saldo a pagar => value negativo
     rows.forEach(r => { r.value = -each; });
 
-    const { error } = await supabase.from('client_transactions').insert(rows);
-    if (error) { toast.error(error.message); return; }
-    toast.success(n > 1 ? `${n} parcelas registradas!` : 'Vale registrado!');
-    setValeDialog(false);
-    setValeForm({ date: todayISO(), description: '', amount: '', installments: '1' });
-    await Promise.all([loadClients(), loadLedger(selectedId)]);
+    try {
+      const { error } = await supabase.from('client_transactions').insert(rows);
+      if (error) {
+        console.error('Erro ao salvar vale:', error);
+        toast.error(error.message);
+        return;
+      }
+      toast.success(n > 1 ? `${n} parcelas registradas!` : 'Vale registrado!');
+      setValeDialog(false);
+      setValeForm({ date: todayISO(), description: '', amount: '', installments: '1' });
+      await Promise.all([loadClients(), loadLedger(selectedId)]);
+    } catch (err: any) {
+      console.error('Erro inesperado ao salvar vale:', err);
+      toast.error(err?.message || 'Erro inesperado ao salvar');
+    }
   };
 
   // ===== CSV export =====
@@ -292,6 +305,31 @@ export function ContaCorrentePage() {
     a.download = `extrato_${selectedClient.name.replace(/\s+/g, '_')}_${todayISO()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // ===== WhatsApp =====
+  const sendWhatsApp = () => {
+    if (!selectedClient) return;
+    const phone = (selectedClient.whatsapp || selectedClient.phone || '').replace(/\D/g, '');
+    if (!phone) { toast.error('Cliente sem telefone cadastrado'); return; }
+    const fullPhone = phone.length <= 11 ? `55${phone}` : phone;
+
+    const lines: string[] = [
+      '📊 *Extrato Sucata União*',
+      `Cliente: ${selectedClient.name}`,
+      `Data: ${fmtDate(new Date().toISOString())}`,
+      '─────────────────',
+    ];
+    ledger.forEach(e => {
+      const val = e.type === 'PAGAMENTO' ? -e.transferred : e.value;
+      lines.push(`${fmtDate(e.date)} | ${e.type} | ${money(val)}`);
+    });
+    lines.push('─────────────────');
+    lines.push(`Saldo atual: ${money(summary.balance)}`);
+    lines.push('Dúvidas? (31) 99653-5321');
+
+    const msg = encodeURIComponent(lines.join('\n'));
+    window.open(`https://wa.me/${fullPhone}?text=${msg}`, '_blank');
   };
 
   return (
@@ -376,6 +414,9 @@ export function ContaCorrentePage() {
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={exportCSV}>
                     <Download className="h-3.5 w-3.5 mr-1" /> Exportar Extrato
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={sendWhatsApp}>
+                    <MessageCircle className="h-3.5 w-3.5 mr-1" /> Enviar WhatsApp
                   </Button>
                   <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setPayDialog(true)}>
                     <DollarSign className="h-3.5 w-3.5 mr-1" /> Registrar Pagamento
@@ -522,8 +563,8 @@ export function ContaCorrentePage() {
               </div>
               <div>
                 <Label className="text-xs">Parcelas</Label>
-                <Select value={valeForm.installments} onValueChange={v => setValeForm(p => ({ ...p, installments: v }))}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <Select defaultValue="1" value={valeForm.installments || '1'} onValueChange={v => { if (v) setValeForm(p => ({ ...p, installments: v })); }}>
+                  <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="1x" /></SelectTrigger>
                   <SelectContent>
                     {Array.from({ length: 12 }).map((_, i) => (
                       <SelectItem key={i + 1} value={String(i + 1)}>{i + 1}x</SelectItem>
