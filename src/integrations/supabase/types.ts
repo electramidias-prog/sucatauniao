@@ -790,6 +790,68 @@ export type Database = {
         }
         Relationships: []
       }
+      weighing_fractions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_tare: number
+          discount_type: string | null
+          discount_value: number
+          final_weight: number
+          id: string
+          material_type: string
+          net_weight: number
+          photo_url: string | null
+          previous_weight: number
+          price_per_kg: number
+          sequence_number: number
+          subtotal: number
+          weighing_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_tare?: number
+          discount_type?: string | null
+          discount_value?: number
+          final_weight?: number
+          id?: string
+          material_type: string
+          net_weight?: number
+          photo_url?: string | null
+          previous_weight?: number
+          price_per_kg?: number
+          sequence_number: number
+          subtotal?: number
+          weighing_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_tare?: number
+          discount_type?: string | null
+          discount_value?: number
+          final_weight?: number
+          id?: string
+          material_type?: string
+          net_weight?: number
+          photo_url?: string | null
+          previous_weight?: number
+          price_per_kg?: number
+          sequence_number?: number
+          subtotal?: number
+          weighing_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weighing_fractions_weighing_id_fkey"
+            columns: ["weighing_id"]
+            isOneToOne: false
+            referencedRelation: "weighings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weighings: {
         Row: {
           client_id: string
@@ -800,7 +862,7 @@ export type Database = {
           final_net_weight: number | null
           gross_weight: number
           id: string
-          material_type: string
+          material_type: string | null
           net_weight: number | null
           notes: string | null
           photo_url: string | null
@@ -810,6 +872,7 @@ export type Database = {
           tare_weight: number
           ticket_number: number
           total_value: number | null
+          total_weight: number
           updated_at: string
           vehicle_plate: string | null
         }
@@ -822,7 +885,7 @@ export type Database = {
           final_net_weight?: number | null
           gross_weight?: number
           id?: string
-          material_type?: string
+          material_type?: string | null
           net_weight?: number | null
           notes?: string | null
           photo_url?: string | null
@@ -832,6 +895,7 @@ export type Database = {
           tare_weight?: number
           ticket_number?: number
           total_value?: number | null
+          total_weight?: number
           updated_at?: string
           vehicle_plate?: string | null
         }
@@ -844,7 +908,7 @@ export type Database = {
           final_net_weight?: number | null
           gross_weight?: number
           id?: string
-          material_type?: string
+          material_type?: string | null
           net_weight?: number | null
           notes?: string | null
           photo_url?: string | null
@@ -854,6 +918,7 @@ export type Database = {
           tare_weight?: number
           ticket_number?: number
           total_value?: number | null
+          total_weight?: number
           updated_at?: string
           vehicle_plate?: string | null
         }
