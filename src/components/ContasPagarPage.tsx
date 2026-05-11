@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { RefreshButton } from "@/components/RefreshButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -193,10 +195,10 @@ export function ContasPagarPage() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    load();
-    loadCustomCategories();
+  const refreshAll = useCallback(async () => {
+    await Promise.all([load(), loadCustomCategories()]);
   }, []);
+  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(refreshAll);
 
   const filtered = useMemo(() => {
     const today = todayISO();
@@ -400,7 +402,9 @@ export function ContasPagarPage() {
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Contas a Pagar</h1>
-        {canEdit && (
+        <div className="flex items-center gap-2">
+          <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
+          {canEdit && (
           <Button
             size="sm"
             onClick={() => {
@@ -410,7 +414,8 @@ export function ContasPagarPage() {
           >
             <Plus className="h-4 w-4" /> Nova Conta
           </Button>
-        )}
+          )}
+        </div>
       </div>
 
       {/* KPIs */}
