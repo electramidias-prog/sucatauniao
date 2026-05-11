@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Settings, Building2, Scale, Printer, Globe, Bell } from 'lucide-react';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { RefreshButton } from '@/components/RefreshButton';
 
 export function ConfiguracoesPage() {
   const [empresa, setEmpresa] = useState({
@@ -37,6 +39,9 @@ export function ConfiguracoesPage() {
     toast.success('Configurações salvas com sucesso!');
   };
 
+  // Settings page has no remote fetch; refresh is a no-op marker for parity.
+  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(async () => {});
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -44,7 +49,10 @@ export function ConfiguracoesPage() {
           <h1 className="text-xl font-bold">Configurações</h1>
           <p className="text-sm text-muted-foreground">Parâmetros gerais do sistema</p>
         </div>
-        <Button size="sm" onClick={handleSave}><Settings className="h-3.5 w-3.5 mr-1" /> Salvar Tudo</Button>
+        <div className="flex items-center gap-2">
+          <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
+          <Button size="sm" onClick={handleSave}><Settings className="h-3.5 w-3.5 mr-1" /> Salvar Tudo</Button>
+        </div>
       </div>
 
       <Tabs defaultValue="empresa">
