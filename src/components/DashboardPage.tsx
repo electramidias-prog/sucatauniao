@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Scale, Weight, Users, DollarSign } from 'lucide-react';
@@ -7,6 +7,8 @@ import {
   PieChart, Pie, Cell,
 } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { RefreshButton } from '@/components/RefreshButton';
 
 const MATERIAL_COLORS: Record<string, string> = {
   mista: '#dc2626',
@@ -203,11 +205,7 @@ export function DashboardPage() {
     }
   };
 
-  useEffect(() => {
-    loadAll();
-    const id = setInterval(loadAll, 5 * 60 * 1000);
-    return () => clearInterval(id);
-  }, []);
+  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(loadAll);
 
   const cards = [
     { label: 'Pesagens Hoje', value: kpis ? String(kpis.pesagensHoje) : '—', icon: Scale },
@@ -220,9 +218,12 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-lg font-bold">Dashboard</h1>
-        <p className="text-xs text-muted-foreground">Visão geral do pátio em tempo real</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-lg font-bold">Dashboard</h1>
+          <p className="text-xs text-muted-foreground">Visão geral do pátio em tempo real</p>
+        </div>
+        <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
       </div>
 
       {/* KPI Cards */}
