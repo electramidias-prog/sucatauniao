@@ -6,15 +6,16 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard, MessageSquare, Scale, Warehouse, FileText,
   Users, Wallet, Calculator, BarChart3, Shield, ScrollText, Settings,
-  ChevronLeft, ChevronRight, LogOut, Bot, HardHat, FileSpreadsheet,
+  ChevronLeft, ChevronRight, LogOut, Bot, HardHat, FileSpreadsheet, Calendar,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '@/assets/logo-sucata-uniao.jpg';
 import { routePreloadMap } from '@/config/routePreload';
+import { useCalendarAlertsCount } from '@/hooks/useCalendarAlertsCount';
 
 const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard, MessageSquare, Scale, Warehouse, FileText,
-  Users, Wallet, Calculator, BarChart3, Shield, ScrollText, Settings, FileSpreadsheet,
+  Users, Wallet, Calculator, BarChart3, Shield, ScrollText, Settings, FileSpreadsheet, Calendar,
 };
 
 interface AppSidebarProps {
@@ -27,6 +28,7 @@ export function AppSidebar({ onOpenAna, onOpenCarlinhos }: AppSidebarProps) {
   const location = useLocation();
   const { user, logout } = useAuth();
   const userRole = user?.role || 'admin';
+  const calendarAlerts = useCalendarAlertsCount();
 
   return (
     <aside
@@ -80,6 +82,16 @@ export function AppSidebar({ onOpenAna, onOpenCarlinhos }: AppSidebarProps) {
                   >
                     <Icon className="h-4 w-4 shrink-0" />
                     {!collapsed && <span className="truncate">{item.label}</span>}
+                    {item.path === '/calendario' && calendarAlerts > 0 && (
+                      <span
+                        className={cn(
+                          'ml-auto inline-flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold',
+                          collapsed ? 'absolute top-0 right-0 h-4 w-4' : 'h-4 min-w-[16px] px-1'
+                        )}
+                      >
+                        {calendarAlerts > 99 ? '99+' : calendarAlerts}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
