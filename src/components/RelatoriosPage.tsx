@@ -107,7 +107,8 @@ export function RelatoriosPage() {
             <SelectItem value="90d">Últimos 90 dias</SelectItem>
             <SelectItem value="365d">Último ano</SelectItem>
           </SelectContent>
-        </Select>
+          </Select>
+        </div>
       </div>
 
       {loading ? (
