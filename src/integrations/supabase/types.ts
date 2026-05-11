@@ -634,6 +634,132 @@ export type Database = {
         }
         Relationships: []
       }
+      epi_deliveries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          employee_id: string
+          epi_id: string
+          id: string
+          observation: string | null
+          quantity: number
+          reason: string
+          receipt_pdf_url: string | null
+          signature_url: string | null
+          size: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          employee_id: string
+          epi_id: string
+          id?: string
+          observation?: string | null
+          quantity?: number
+          reason?: string
+          receipt_pdf_url?: string | null
+          signature_url?: string | null
+          size?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string
+          epi_id?: string
+          id?: string
+          observation?: string | null
+          quantity?: number
+          reason?: string
+          receipt_pdf_url?: string | null
+          signature_url?: string | null
+          size?: string | null
+        }
+        Relationships: []
+      }
+      epi_inflows: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          epi_id: string
+          id: string
+          invoice: string | null
+          quantity: number
+          supplier: string | null
+          total_cost: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          epi_id: string
+          id?: string
+          invoice?: string | null
+          quantity?: number
+          supplier?: string | null
+          total_cost?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          epi_id?: string
+          id?: string
+          invoice?: string | null
+          quantity?: number
+          supplier?: string | null
+          total_cost?: number | null
+        }
+        Relationships: []
+      }
+      epis: {
+        Row: {
+          ca_expiry: string | null
+          ca_number: string | null
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          min_quantity: number
+          name: string
+          photo_url: string | null
+          quantity: number
+          supplier: string | null
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          ca_expiry?: string | null
+          ca_number?: string | null
+          category: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          min_quantity?: number
+          name: string
+          photo_url?: string | null
+          quantity?: number
+          supplier?: string | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ca_expiry?: string | null
+          ca_number?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          min_quantity?: number
+          name?: string
+          photo_url?: string | null
+          quantity?: number
+          supplier?: string | null
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       material_prices: {
         Row: {
           id: string
