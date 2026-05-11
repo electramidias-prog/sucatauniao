@@ -18,6 +18,8 @@ import {
   CreditCard, X, Ban, CheckCircle2,
 } from 'lucide-react';
 import { ImportMappingDialog } from '@/components/ImportMappingDialog';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { RefreshButton } from '@/components/RefreshButton';
 
 // ─── Types ───
 interface Client {
@@ -135,7 +137,7 @@ export function ClientsPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchClients(); }, [fetchClients]);
+  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(fetchClients);
 
   const filtered = clients.filter((c) => {
     const s = search.toLowerCase();
@@ -230,10 +232,11 @@ export function ClientsPage() {
           <p className="text-sm text-muted-foreground">{clients.length} clientes cadastrados</p>
         </div>
         <div className="flex gap-2">
+          <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
           <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
             <Upload className="h-3.5 w-3.5 mr-1" /> Importar
           </Button>
-          <ImportMappingDialog open={importOpen} onOpenChange={setImportOpen} onComplete={fetchClients} />
+          <ImportMappingDialog open={importOpen} onOpenChange={setImportOpen} onComplete={refresh} />
           <Button variant="outline" size="sm" onClick={exportCSV}>
             <Download className="h-3.5 w-3.5 mr-1" /> Exportar
           </Button>
