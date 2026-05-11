@@ -73,7 +73,7 @@ export function AppSidebar({ onOpenAna, onOpenCarlinhos }: AppSidebarProps) {
                       if (preload) preload();
                     }}
                     className={cn(
-                      'flex items-center gap-2 px-2 py-1.5 rounded text-xs font-medium transition-colors',
+                      'relative flex items-center gap-2 px-2 py-1.5 rounded text-xs font-medium transition-colors',
                       active
                         ? 'bg-sidebar-accent text-sidebar-primary'
                         : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
