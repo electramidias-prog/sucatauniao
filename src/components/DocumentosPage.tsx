@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAutoRefresh } from "@/hooks/useAutoRefresh";
@@ -18,9 +18,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, FileText, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, Download, Settings, X } from "lucide-react";
 
-const CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   "Licença Ambiental (LO/LAO)",
   "AVCB",
   "Alvará de Funcionamento",
@@ -55,7 +55,7 @@ interface FormState {
 }
 
 const emptyForm: FormState = {
-  name: "", category: CATEGORIES[0], protocol_number: "",
+  name: "", category: DEFAULT_CATEGORIES[0], protocol_number: "",
   issue_date: "", expiry_date: "", responsible: "", obs: "", file: null,
 };
 
@@ -80,6 +80,52 @@ export function DocumentosPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [saving, setSaving] = useState(false);
 
+  // Custom categories
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+  const [catModalOpen, setCatModalOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+
+  const allCategories = useMemo(() => {
+    const merged = [...DEFAULT_CATEGORIES];
+    for (const c of customCategories) if (!merged.includes(c)) merged.push(c);
+    return merged;
+  }, [customCategories]);
+
+  const loadCustomCategories = async () => {
+    const { data } = await supabase
+      .from("system_settings")
+      .select("value")
+      .eq("key", "document_categories")
+      .maybeSingle();
+    if (data?.value && Array.isArray(data.value)) {
+      setCustomCategories(data.value as string[]);
+    }
+  };
+
+  const saveCustomCategory = async () => {
+    const name = newCatName.trim();
+    if (!name) return;
+    if (allCategories.includes(name)) { toast.error("Categoria já existe"); return; }
+    const updated = [...customCategories, name];
+    const { error } = await supabase
+      .from("system_settings")
+      .upsert({ key: "document_categories", value: updated as any, updated_by: user?.id }, { onConflict: "key" });
+    if (error) return toast.error(error.message);
+    setCustomCategories(updated);
+    setNewCatName("");
+    toast.success("Categoria adicionada");
+  };
+
+  const removeCustomCategory = async (cat: string) => {
+    const updated = customCategories.filter((c) => c !== cat);
+    const { error } = await supabase
+      .from("system_settings")
+      .upsert({ key: "document_categories", value: updated as any, updated_by: user?.id }, { onConflict: "key" });
+    if (error) return toast.error(error.message);
+    setCustomCategories(updated);
+    toast.success("Categoria removida");
+  };
+
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
@@ -89,7 +135,10 @@ export function DocumentosPage() {
     setLoading(false);
   };
 
-  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(load);
+  const refreshAll = useCallback(async () => {
+    await Promise.all([load(), loadCustomCategories()]);
+  }, []);
+  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(refreshAll);
 
   const sorted = [...docs].sort((a, b) => statusFor(a.expiry_date).sortKey - statusFor(b.expiry_date).sortKey);
 
@@ -163,6 +212,11 @@ export function DocumentosPage() {
         </div>
         <div className="flex items-center gap-2">
           <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
+          {isAdmin && (
+            <Button variant="outline" size="icon" onClick={() => setCatModalOpen(true)} title="Gerenciar categorias">
+              <Settings className="h-4 w-4" />
+            </Button>
+          )}
           {isAdmin && (
             <Button onClick={openNew}><Plus className="w-4 h-4" /> Novo Documento</Button>
           )}
@@ -247,7 +301,7 @@ export function DocumentosPage() {
               <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {allCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -279,6 +333,50 @@ export function DocumentosPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Gerenciar Categorias */}
+      <Dialog open={catModalOpen} onOpenChange={setCatModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gerenciar Categorias</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nome da nova categoria"
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && saveCustomCategory()}
+              />
+              <Button size="sm" onClick={saveCustomCategory}>Adicionar</Button>
+            </div>
+            <div className="text-xs text-muted-foreground">Categorias padrão:</div>
+            <div className="flex flex-wrap gap-1">
+              {DEFAULT_CATEGORIES.map((c) => (
+                <Badge key={c} variant="secondary" className="text-xs">{c}</Badge>
+              ))}
+            </div>
+            {customCategories.length > 0 && (
+              <>
+                <div className="text-xs text-muted-foreground">Categorias personalizadas:</div>
+                <div className="flex flex-wrap gap-1">
+                  {customCategories.map((c) => (
+                    <Badge key={c} variant="outline" className="text-xs flex items-center gap-1">
+                      {c}
+                      <button onClick={() => removeCustomCategory(c)} className="hover:text-destructive">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCatModalOpen(false)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
