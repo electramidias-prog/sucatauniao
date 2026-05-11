@@ -19,6 +19,7 @@ export const menuSections: MenuSection[] = [
     title: 'Principal',
     items: [
       { label: 'Painel', iconName: 'LayoutDashboard', path: '/', roles: ALL_ROLES },
+      { label: 'Calendário', iconName: 'Calendar', path: '/calendario', roles: ALL_ROLES },
       { label: 'Chat da Equipe', iconName: 'MessageSquare', path: '/chat', roles: ALL_ROLES },
     ],
   },
