@@ -101,14 +101,14 @@ function diffDays(target: string | null) {
 
 function statusFromExpiries(items: { expiry_date: string | null }[]): 'green' | 'yellow' | 'red' | 'gray' {
   if (items.length === 0) return 'gray';
-  let worst: 'green' | 'yellow' | 'red' = 'green';
+  let hasYellow = false;
   for (const i of items) {
     if (!i.expiry_date) continue;
     const d = diffDays(i.expiry_date);
     if (d < 0) return 'red';
-    if (d <= 30 && worst !== 'red') worst = 'yellow';
+    if (d <= 30) hasYellow = true;
   }
-  return worst;
+  return hasYellow ? 'yellow' : 'green';
 }
 
 function StatusBadge({ status }: { status: 'green' | 'yellow' | 'red' | 'gray' }) {
