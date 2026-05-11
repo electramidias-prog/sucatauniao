@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { RefreshButton } from '@/components/RefreshButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
@@ -83,7 +85,7 @@ export function RelatoriosPage() {
     setLoading(false);
   }, [period]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(fetchData, [fetchData]);
 
   const totalPeso = materialData.reduce((s, m) => s + m.peso, 0);
   const totalValor = materialData.reduce((s, m) => s + m.valor, 0);
@@ -95,7 +97,9 @@ export function RelatoriosPage() {
           <h1 className="text-xl font-bold">Relatórios & BI</h1>
           <p className="text-sm text-muted-foreground">Análises e indicadores do pátio</p>
         </div>
-        <Select value={period} onValueChange={setPeriod}>
+        <div className="flex items-center gap-2">
+          <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
+          <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger className="w-40 h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="7d">Últimos 7 dias</SelectItem>
