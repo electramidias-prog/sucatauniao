@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,8 @@ import {
   Plus, Search, Scale, Truck, FileText, Eye, Printer,
   CheckCircle2, Clock, Package, X, Trash2, Weight, Camera, MessageCircle, Wifi,
 } from 'lucide-react';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { RefreshButton } from '@/components/RefreshButton';
 
 // ─── Types ───
 interface Client {
@@ -166,11 +168,10 @@ export function BalancaPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchWeighings();
-    fetchClients();
-    fetchMaterialPrices();
+  const refreshAll = useCallback(async () => {
+    await Promise.all([fetchWeighings(), fetchClients(), fetchMaterialPrices()]);
   }, [fetchWeighings, fetchClients, fetchMaterialPrices]);
+  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(refreshAll);
 
   // ─── Helpers ───
   const formatWeight = (kg: number) => `${kg.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} kg`;
@@ -525,6 +526,7 @@ Obrigado pela parceria! ✅`;
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
           {/* TODO: integração WebSerial RS485 */}
           <Badge className="bg-yellow-400 text-yellow-950 hover:bg-yellow-400 gap-1">
             <Wifi className="h-3 w-3" />

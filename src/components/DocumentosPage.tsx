@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAutoRefresh } from "@/hooks/useAutoRefresh";
+import { RefreshButton } from "@/components/RefreshButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,7 +89,7 @@ export function DocumentosPage() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(load);
 
   const sorted = [...docs].sort((a, b) => statusFor(a.expiry_date).sortKey - statusFor(b.expiry_date).sortKey);
 
@@ -159,9 +161,12 @@ export function DocumentosPage() {
           <h1 className="text-2xl font-bold">Documentos da Empresa</h1>
           <p className="text-sm text-muted-foreground">Controle de vencimentos com semáforo automático</p>
         </div>
-        {isAdmin && (
-          <Button onClick={openNew}><Plus className="w-4 h-4" /> Novo Documento</Button>
-        )}
+        <div className="flex items-center gap-2">
+          <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
+          {isAdmin && (
+            <Button onClick={openNew}><Plus className="w-4 h-4" /> Novo Documento</Button>
+          )}
+        </div>
       </div>
 
       <div className="border rounded-lg bg-card">

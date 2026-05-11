@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { RefreshButton } from '@/components/RefreshButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -46,7 +48,7 @@ export function AuditoriaPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchLogs(); }, [fetchLogs]);
+  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(fetchLogs);
 
   const tables = [...new Set(logs.map(l => l.table_name).filter(Boolean))] as string[];
   const actions = [...new Set(logs.map(l => l.action))];
@@ -68,9 +70,12 @@ export function AuditoriaPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-bold">Auditoria</h1>
-        <p className="text-sm text-muted-foreground">Registro de todas as ações do sistema</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold">Auditoria</h1>
+          <p className="text-sm text-muted-foreground">Registro de todas as ações do sistema</p>
+        </div>
+        <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">

@@ -11,6 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Search, Plus, DollarSign, Download, Wallet, Receipt, MessageCircle } from 'lucide-react';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { RefreshButton } from '@/components/RefreshButton';
 
 interface ClientRow {
   id: string;
@@ -116,7 +118,7 @@ export function ContaCorrentePage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadClients(); }, [loadClients]);
+  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(loadClients);
 
   // ===== Load ledger for selected client =====
   const loadLedger = useCallback(async (clientId: string) => {
@@ -339,6 +341,7 @@ export function ContaCorrentePage() {
           <h1 className="text-xl font-bold">Conta Corrente</h1>
           <p className="text-sm text-muted-foreground">Controle financeiro por cliente</p>
         </div>
+        <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
       </div>
 
       <div className="grid grid-cols-12 gap-3" style={{ minHeight: 'calc(100vh - 180px)' }}>

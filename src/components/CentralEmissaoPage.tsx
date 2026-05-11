@@ -1,6 +1,8 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { RefreshButton } from '@/components/RefreshButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -129,6 +131,14 @@ export function CentralEmissaoPage() {
       if (Array.isArray(h)) setPriceHistory(h);
     } catch { /* ignore */ }
   }, []);
+
+  const refreshClients = useCallback(async () => {
+    const { data } = await supabase
+      .from('clients')
+      .select('id, name, nickname, document_number, vehicle_plate');
+    if (data) setClients(data as ClientRow[]);
+  }, []);
+  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(refreshClients);
 
   const savePrice = (price: number) => {
     const next = [price, ...priceHistory.filter(p => p !== price)].slice(0, 10);
@@ -343,6 +353,7 @@ export function CentralEmissaoPage() {
             Importe o extrato SICOOB, cruze com clientes e gere os arquivos de emissão.
           </p>
         </div>
+        <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
       </div>
 
       {/* Stepper */}
