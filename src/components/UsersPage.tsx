@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { RefreshButton } from '@/components/RefreshButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -67,7 +69,7 @@ export function UsersPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  const { refresh, isRefreshing, lastRefreshAt } = useAutoRefresh(fetchUsers);
 
   const filtered = users.filter(u => {
     const s = search.toLowerCase();
@@ -129,9 +131,12 @@ export function UsersPage() {
           </h1>
           <p className="text-sm text-muted-foreground">{users.length} usuários cadastrados</p>
         </div>
-        <Button size="sm" onClick={() => setDialogOpen(true)}>
-          <Plus className="h-3.5 w-3.5 mr-1" /> Novo Usuário
-        </Button>
+        <div className="flex items-center gap-2">
+          <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
+          <Button size="sm" onClick={() => setDialogOpen(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1" /> Novo Usuário
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
