@@ -480,6 +480,160 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_asos: {
+        Row: {
+          aso_date: string | null
+          aso_type: string
+          created_at: string
+          doctor_crm: string | null
+          doctor_name: string | null
+          document_url: string | null
+          employee_id: string
+          expiry_date: string | null
+          id: string
+        }
+        Insert: {
+          aso_date?: string | null
+          aso_type: string
+          created_at?: string
+          doctor_crm?: string | null
+          doctor_name?: string | null
+          document_url?: string | null
+          employee_id: string
+          expiry_date?: string | null
+          id?: string
+        }
+        Update: {
+          aso_date?: string | null
+          aso_type?: string
+          created_at?: string
+          doctor_crm?: string | null
+          doctor_name?: string | null
+          document_url?: string | null
+          employee_id?: string
+          expiry_date?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_asos_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employee_trainings: {
+        Row: {
+          certificate_url: string | null
+          created_at: string
+          employee_id: string
+          expiry_date: string | null
+          id: string
+          instructor: string | null
+          nr_code: string
+          training_date: string | null
+        }
+        Insert: {
+          certificate_url?: string | null
+          created_at?: string
+          employee_id: string
+          expiry_date?: string | null
+          id?: string
+          instructor?: string | null
+          nr_code: string
+          training_date?: string | null
+        }
+        Update: {
+          certificate_url?: string | null
+          created_at?: string
+          employee_id?: string
+          expiry_date?: string | null
+          id?: string
+          instructor?: string | null
+          nr_code?: string
+          training_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_trainings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          address: string | null
+          admission_date: string | null
+          base_salary: number | null
+          birth_date: string | null
+          cbo_code: string | null
+          contract_type: string | null
+          cpf: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          photo_url: string | null
+          rg: string | null
+          role_title: string | null
+          sector: string | null
+          status: string
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          admission_date?: string | null
+          base_salary?: number | null
+          birth_date?: string | null
+          cbo_code?: string | null
+          contract_type?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          phone?: string | null
+          photo_url?: string | null
+          rg?: string | null
+          role_title?: string | null
+          sector?: string | null
+          status?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          admission_date?: string | null
+          base_salary?: number | null
+          birth_date?: string | null
+          cbo_code?: string | null
+          contract_type?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          photo_url?: string | null
+          rg?: string | null
+          role_title?: string | null
+          sector?: string | null
+          status?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       material_prices: {
         Row: {
           id: string
