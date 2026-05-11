@@ -16,11 +16,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, Plus, FileText, Wallet, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, FileText, Wallet, CalendarDays, HardHat } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-type EventType = 'bill' | 'document' | 'manual';
+type EventType = 'bill' | 'document' | 'manual' | 'compliance_rh';
 
 interface CalEvent {
   id: string;
@@ -73,6 +73,7 @@ export function CalendarioPage() {
   const [showBills, setShowBills] = useState(true);
   const [showDocs, setShowDocs] = useState(true);
   const [showManual, setShowManual] = useState(true);
+  const [showRH, setShowRH] = useState(true);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({
@@ -81,11 +82,16 @@ export function CalendarioPage() {
   });
 
   const fetchAll = useCallback(async () => {
-    const [billsRes, docsRes, eventsRes] = await Promise.all([
+    const [billsRes, docsRes, eventsRes, trRes, asoRes, empRes] = await Promise.all([
       supabase.from('bills').select('id, description, due_date, amount, category, status').neq('status', 'pago'),
       supabase.from('company_documents').select('id, name, expiry_date, category').not('expiry_date', 'is', null),
       supabase.from('calendar_events').select('*'),
+      supabase.from('employee_trainings').select('id, employee_id, nr_code, expiry_date').not('expiry_date', 'is', null),
+      supabase.from('employee_asos').select('id, employee_id, aso_type, expiry_date').not('expiry_date', 'is', null),
+      supabase.from('employees').select('id, full_name'),
     ]);
+    const empMap: Record<string, string> = {};
+    (empRes.data || []).forEach((e: any) => { empMap[e.id] = e.full_name; });
 
     const list: CalEvent[] = [];
     (billsRes.data || []).forEach((b: any) => list.push({
@@ -100,6 +106,16 @@ export function CalendarioPage() {
       id: 'manual:' + e.id, type: 'manual', title: e.title, date: e.event_date,
       time: e.event_time, description: e.description, category: e.category,
     }));
+    (trRes.data || []).forEach((t: any) => list.push({
+      id: 'training:' + t.id, type: 'compliance_rh',
+      title: `${t.nr_code} — ${empMap[t.employee_id] || 'Funcionário'}`,
+      date: t.expiry_date, category: 'NR',
+    }));
+    (asoRes.data || []).forEach((a: any) => list.push({
+      id: 'aso:' + a.id, type: 'compliance_rh',
+      title: `ASO ${a.aso_type} — ${empMap[a.employee_id] || 'Funcionário'}`,
+      date: a.expiry_date, category: 'ASO',
+    }));
     setEvents(list);
   }, []);
 
@@ -108,8 +124,9 @@ export function CalendarioPage() {
   const filtered = useMemo(() => events.filter((e) =>
     (e.type === 'bill' && showBills) ||
     (e.type === 'document' && showDocs) ||
-    (e.type === 'manual' && showManual)
-  ), [events, showBills, showDocs, showManual]);
+    (e.type === 'manual' && showManual) ||
+    (e.type === 'compliance_rh' && showRH)
+  ), [events, showBills, showDocs, showManual, showRH]);
 
   const eventsByDay = useMemo(() => {
     const map: Record<string, CalEvent[]> = {};
@@ -165,11 +182,13 @@ export function CalendarioPage() {
   const goToDetails = (e: CalEvent) => {
     if (e.type === 'bill') navigate('/contas-pagar');
     else if (e.type === 'document') navigate('/documentos');
+    else if (e.type === 'compliance_rh') navigate('/funcionarios');
   };
 
   const typeIcon = (t: EventType) => {
     if (t === 'bill') return <Wallet className="h-4 w-4 text-orange-500" />;
     if (t === 'document') return <FileText className="h-4 w-4 text-info" />;
+    if (t === 'compliance_rh') return <HardHat className="h-4 w-4 text-yellow-500" />;
     return <CalendarDays className="h-4 w-4 text-success" />;
   };
 
@@ -194,6 +213,10 @@ export function CalendarioPage() {
         <label className="flex items-center gap-1.5">
           <Checkbox checked={showManual} onCheckedChange={(v) => setShowManual(!!v)} />
           <span>Eventos Manuais</span>
+        </label>
+        <label className="flex items-center gap-1.5">
+          <Checkbox checked={showRH} onCheckedChange={(v) => setShowRH(!!v)} />
+          <span>Compliance RH 👷</span>
         </label>
         <div className="ml-auto flex items-center gap-3">
           <div className="flex items-center gap-2 text-[11px]">
