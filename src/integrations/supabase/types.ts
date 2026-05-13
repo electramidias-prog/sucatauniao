@@ -480,6 +480,163 @@ export type Database = {
         }
         Relationships: []
       }
+      dds_attendance: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: string
+          present: boolean
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: string
+          present?: boolean
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: string
+          present?: boolean
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dds_attendance_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "dds_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dds_operation_mode: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          ended_at: string | null
+          expected_end_date: string | null
+          id: string
+          mode: string
+          reason: string | null
+          start_date: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ended_at?: string | null
+          expected_end_date?: string | null
+          id?: string
+          mode?: string
+          reason?: string | null
+          start_date?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          ended_at?: string | null
+          expected_end_date?: string | null
+          id?: string
+          mode?: string
+          reason?: string | null
+          start_date?: string
+        }
+        Relationships: []
+      }
+      dds_sessions: {
+        Row: {
+          ata_pdf_url: string | null
+          attendance_photo_url: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          duration_minutes: number | null
+          frequency_type: string
+          id: string
+          location: string | null
+          session_date: string
+          session_time: string | null
+          summary: string | null
+          supervisor_id: string | null
+          theme_id: string | null
+          theme_title: string
+        }
+        Insert: {
+          ata_pdf_url?: string | null
+          attendance_photo_url?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number | null
+          frequency_type?: string
+          id?: string
+          location?: string | null
+          session_date: string
+          session_time?: string | null
+          summary?: string | null
+          supervisor_id?: string | null
+          theme_id?: string | null
+          theme_title: string
+        }
+        Update: {
+          ata_pdf_url?: string | null
+          attendance_photo_url?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number | null
+          frequency_type?: string
+          id?: string
+          location?: string | null
+          session_date?: string
+          session_time?: string | null
+          summary?: string | null
+          supervisor_id?: string | null
+          theme_id?: string | null
+          theme_title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dds_sessions_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "dds_themes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dds_themes: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          last_addressed_at: string | null
+          title: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_addressed_at?: string | null
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_addressed_at?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       employee_asos: {
         Row: {
           aso_date: string | null
