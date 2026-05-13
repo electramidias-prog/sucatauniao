@@ -29,6 +29,7 @@ const CalendarioPage = React.lazy(() => import('@/components/CalendarioPage').th
 const FuncionariosPage = React.lazy(() => import('@/components/FuncionariosPage').then(m => ({ default: m.FuncionariosPage })));
 const EPIsPage = React.lazy(() => import('@/components/EPIsPage').then(m => ({ default: m.EPIsPage })));
 const DDSPage = React.lazy(() => import('@/components/DDSPage').then(m => ({ default: m.DDSPage })));
+const MaquinasPage = React.lazy(() => import('@/components/MaquinasPage').then(m => ({ default: m.MaquinasPage })));
 
 const queryClient = new QueryClient();
 
@@ -67,7 +68,7 @@ function AuthenticatedApp() {
           <Route path="/calendario" element={<CalendarioPage />} />
           <Route path="/funcionarios" element={<FuncionariosPage />} />
           <Route path="/epis" element={<EPIsPage />} />
-          <Route path="/maquinas" element={<PlaceholderPage title="Máquinas e Laudos" />} />
+          <Route path="/maquinas" element={<MaquinasPage />} />
           <Route path="/dds" element={<DDSPage />} />
           <Route path="/central-emissao" element={<CentralEmissaoPage />} />
           <Route path="/relatorios" element={<RelatoriosPage />} />

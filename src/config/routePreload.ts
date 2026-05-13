@@ -11,7 +11,7 @@ export const routePreloadMap: Record<string, () => Promise<any>> = {
   '/documentos': () => import('@/components/DocumentosPage'),
   '/funcionarios': () => import('@/components/FuncionariosPage'),
   '/epis': () => import('@/components/EPIsPage'),
-  '/maquinas': () => import('@/components/PlaceholderPage'),
+  '/maquinas': () => import('@/components/MaquinasPage'),
   '/dds': () => import('@/components/DDSPage'),
   '/central-emissao': () => import('@/components/CentralEmissaoPage'),
   '/relatorios': () => import('@/components/RelatoriosPage'),
