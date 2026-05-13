@@ -140,6 +140,108 @@ export type Database = {
         }
         Relationships: []
       }
+      checklist_records: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          employee_id: string | null
+          equipment_id: string | null
+          id: string
+          observations: string | null
+          pdf_url: string | null
+          photo_url: string | null
+          record_date: string
+          responses: Json
+          result: string
+          supervisor_id: string | null
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string | null
+          equipment_id?: string | null
+          id?: string
+          observations?: string | null
+          pdf_url?: string | null
+          photo_url?: string | null
+          record_date?: string
+          responses?: Json
+          result?: string
+          supervisor_id?: string | null
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          employee_id?: string | null
+          equipment_id?: string | null
+          id?: string
+          observations?: string | null
+          pdf_url?: string | null
+          photo_url?: string | null
+          record_date?: string
+          responses?: Json
+          result?: string
+          supervisor_id?: string | null
+          template_id?: string
+        }
+        Relationships: []
+      }
+      checklist_signatures: {
+        Row: {
+          created_at: string
+          id: string
+          person_name: string
+          record_id: string
+          role: string | null
+          signature_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          person_name: string
+          record_id: string
+          role?: string | null
+          signature_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          person_name?: string
+          record_id?: string
+          role?: string | null
+          signature_url?: string | null
+        }
+        Relationships: []
+      }
+      checklist_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          equipment_types: string[]
+          id: string
+          items: Json
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          equipment_types?: string[]
+          id?: string
+          items?: Json
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          equipment_types?: string[]
+          id?: string
+          items?: Json
+          name?: string
+        }
+        Relationships: []
+      }
       client_change_requests: {
         Row: {
           client_id: string
@@ -914,6 +1016,171 @@ export type Database = {
           supplier?: string | null
           unit_price?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      equipment: {
+        Row: {
+          brand: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          inmetro_cert: string | null
+          inmetro_date: string | null
+          inmetro_expiry: string | null
+          inmetro_pdf_url: string | null
+          last_checklist_at: string | null
+          maintenance_frequency: string | null
+          model: string | null
+          name: string
+          next_maintenance: string | null
+          nr12_art: string | null
+          nr12_date: string | null
+          nr12_expiry: string | null
+          nr12_pdf_url: string | null
+          nr12_technician: string | null
+          patrimony: string | null
+          photo_url: string | null
+          plate: string | null
+          responsible_id: string | null
+          sector: string | null
+          serial_number: string | null
+          status: string
+          type: string
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inmetro_cert?: string | null
+          inmetro_date?: string | null
+          inmetro_expiry?: string | null
+          inmetro_pdf_url?: string | null
+          last_checklist_at?: string | null
+          maintenance_frequency?: string | null
+          model?: string | null
+          name: string
+          next_maintenance?: string | null
+          nr12_art?: string | null
+          nr12_date?: string | null
+          nr12_expiry?: string | null
+          nr12_pdf_url?: string | null
+          nr12_technician?: string | null
+          patrimony?: string | null
+          photo_url?: string | null
+          plate?: string | null
+          responsible_id?: string | null
+          sector?: string | null
+          serial_number?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inmetro_cert?: string | null
+          inmetro_date?: string | null
+          inmetro_expiry?: string | null
+          inmetro_pdf_url?: string | null
+          last_checklist_at?: string | null
+          maintenance_frequency?: string | null
+          model?: string | null
+          name?: string
+          next_maintenance?: string | null
+          nr12_art?: string | null
+          nr12_date?: string | null
+          nr12_expiry?: string | null
+          nr12_pdf_url?: string | null
+          nr12_technician?: string | null
+          patrimony?: string | null
+          photo_url?: string | null
+          plate?: string | null
+          responsible_id?: string | null
+          sector?: string | null
+          serial_number?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
+      equipment_documents: {
+        Row: {
+          created_at: string
+          document_url: string | null
+          equipment_id: string
+          expiry_date: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          document_url?: string | null
+          equipment_id: string
+          expiry_date?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          document_url?: string | null
+          equipment_id?: string
+          expiry_date?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      maintenance_records: {
+        Row: {
+          attachments: string[] | null
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          equipment_id: string
+          id: string
+          maintenance_date: string
+          next_maintenance: string | null
+          parts_replaced: string | null
+          responsible_id: string | null
+          type: string
+        }
+        Insert: {
+          attachments?: string[] | null
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          equipment_id: string
+          id?: string
+          maintenance_date?: string
+          next_maintenance?: string | null
+          parts_replaced?: string | null
+          responsible_id?: string | null
+          type?: string
+        }
+        Update: {
+          attachments?: string[] | null
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          equipment_id?: string
+          id?: string
+          maintenance_date?: string
+          next_maintenance?: string | null
+          parts_replaced?: string | null
+          responsible_id?: string | null
+          type?: string
         }
         Relationships: []
       }
