@@ -1295,6 +1295,87 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_items: {
+        Row: {
+          carreta_target_kg: number
+          current_quantity_kg: number
+          id: string
+          last_entry_at: string | null
+          last_exit_at: string | null
+          material_type: string
+          price_per_kg: number
+          updated_at: string
+        }
+        Insert: {
+          carreta_target_kg?: number
+          current_quantity_kg?: number
+          id?: string
+          last_entry_at?: string | null
+          last_exit_at?: string | null
+          material_type: string
+          price_per_kg?: number
+          updated_at?: string
+        }
+        Update: {
+          carreta_target_kg?: number
+          current_quantity_kg?: number
+          id?: string
+          last_entry_at?: string | null
+          last_exit_at?: string | null
+          material_type?: string
+          price_per_kg?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      stock_movements: {
+        Row: {
+          adjustment_reason: string | null
+          created_at: string
+          created_by: string | null
+          destination: string | null
+          id: string
+          invoice_number: string | null
+          material_type: string
+          movement_type: string
+          observation: string | null
+          origin_id: string | null
+          origin_type: string | null
+          quantity_kg: number
+          responsible_id: string | null
+        }
+        Insert: {
+          adjustment_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          destination?: string | null
+          id?: string
+          invoice_number?: string | null
+          material_type: string
+          movement_type: string
+          observation?: string | null
+          origin_id?: string | null
+          origin_type?: string | null
+          quantity_kg: number
+          responsible_id?: string | null
+        }
+        Update: {
+          adjustment_reason?: string | null
+          created_at?: string
+          created_by?: string | null
+          destination?: string | null
+          id?: string
+          invoice_number?: string | null
+          material_type?: string
+          movement_type?: string
+          observation?: string | null
+          origin_id?: string | null
+          origin_type?: string | null
+          quantity_kg?: number
+          responsible_id?: string | null
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           created_at: string
