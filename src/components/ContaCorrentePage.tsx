@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 import { Search, Plus, DollarSign, Download, Wallet, Receipt, MessageCircle } from 'lucide-react';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { RefreshButton } from '@/components/RefreshButton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AvulsosTab } from '@/components/AvulsosTab';
 
 interface ClientRow {
   id: string;
@@ -344,7 +346,13 @@ export function ContaCorrentePage() {
         <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
       </div>
 
-      <div className="grid grid-cols-12 gap-3" style={{ minHeight: 'calc(100vh - 180px)' }}>
+      <Tabs defaultValue="por-cliente" className="w-full">
+        <TabsList>
+          <TabsTrigger value="por-cliente">Por Cliente</TabsTrigger>
+          <TabsTrigger value="avulsos">Avulsos</TabsTrigger>
+        </TabsList>
+        <TabsContent value="por-cliente">
+        <div className="grid grid-cols-12 gap-3" style={{ minHeight: 'calc(100vh - 220px)' }}>
         {/* ===== LEFT PANEL ===== */}
         <Card className="col-span-12 lg:col-span-4 xl:col-span-3 flex flex-col">
           <CardContent className="p-3 flex-1 flex flex-col gap-2 min-h-0">
