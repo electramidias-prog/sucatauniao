@@ -51,7 +51,8 @@ interface Movement {
 }
 
 export function EstoqueFisicoPage() {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [items, setItems] = useState<StockItem[]>([]);
   const [moves, setMoves] = useState<Movement[]>([]);
   const [loading, setLoading] = useState(true);
