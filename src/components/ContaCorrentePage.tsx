@@ -528,6 +528,11 @@ export function ContaCorrentePage() {
           )}
         </div>
       </div>
+      </TabsContent>
+      <TabsContent value="avulsos">
+        <AvulsosTab />
+      </TabsContent>
+      </Tabs>
 
       {/* ===== Modal: Registrar Pagamento ===== */}
       <Dialog open={payDialog} onOpenChange={setPayDialog}>
