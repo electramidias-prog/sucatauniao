@@ -30,6 +30,7 @@ const FuncionariosPage = React.lazy(() => import('@/components/FuncionariosPage'
 const EPIsPage = React.lazy(() => import('@/components/EPIsPage').then(m => ({ default: m.EPIsPage })));
 const DDSPage = React.lazy(() => import('@/components/DDSPage').then(m => ({ default: m.DDSPage })));
 const MaquinasPage = React.lazy(() => import('@/components/MaquinasPage').then(m => ({ default: m.MaquinasPage })));
+const FaturamentoPage = React.lazy(() => import('@/components/FaturamentoPage').then(m => ({ default: m.FaturamentoPage })));
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ function AuthenticatedApp() {
           <Route path="/clientes" element={<ClientsPage />} />
           <Route path="/conta-corrente" element={<ContaCorrentePage />} />
           <Route path="/contas-pagar" element={<ContasPagarPage />} />
+          <Route path="/faturamento" element={<FaturamentoPage />} />
           <Route path="/documentos" element={<DocumentosPage />} />
           <Route path="/calendario" element={<CalendarioPage />} />
           <Route path="/funcionarios" element={<FuncionariosPage />} />
