@@ -445,6 +445,7 @@ export type Database = {
           pix_key_type: string | null
           portal_access_enabled: boolean
           portal_user_id: string | null
+          qr_code_url: string | null
           rg: string | null
           source: string | null
           state_registration: string | null
@@ -485,6 +486,7 @@ export type Database = {
           pix_key_type?: string | null
           portal_access_enabled?: boolean
           portal_user_id?: string | null
+          qr_code_url?: string | null
           rg?: string | null
           source?: string | null
           state_registration?: string | null
@@ -525,6 +527,7 @@ export type Database = {
           pix_key_type?: string | null
           portal_access_enabled?: boolean
           portal_user_id?: string | null
+          qr_code_url?: string | null
           rg?: string | null
           source?: string | null
           state_registration?: string | null
@@ -1136,6 +1139,92 @@ export type Database = {
           expiry_date?: string | null
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      invoice_items: {
+        Row: {
+          amount: number
+          created_at: string
+          document_number: string | null
+          id: string
+          invoice_id: string
+          item_date: string | null
+          service_type: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          document_number?: string | null
+          id?: string
+          invoice_id: string
+          item_date?: string | null
+          service_type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          document_number?: string | null
+          id?: string
+          invoice_id?: string
+          item_date?: string | null
+          service_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          due_date: string
+          id: string
+          invoice_date: string
+          invoice_number: number
+          observations: string | null
+          paid_at: string | null
+          pdf_url: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          due_date: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: number
+          observations?: string | null
+          paid_at?: string | null
+          pdf_url?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          due_date?: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: number
+          observations?: string | null
+          paid_at?: string | null
+          pdf_url?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
         }
         Relationships: []
       }

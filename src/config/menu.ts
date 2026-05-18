@@ -38,6 +38,7 @@ export const menuSections: MenuSection[] = [
       { label: 'Clientes', iconName: 'Users', path: '/clientes', roles: ['admin', 'financeiro', 'operador_balanca'] },
       { label: 'Conta Corrente', iconName: 'Wallet', path: '/conta-corrente', roles: ['admin', 'financeiro'] },
       { label: 'Contas a Pagar', iconName: 'Wallet', path: '/contas-pagar', roles: ['admin', 'financeiro'] },
+      { label: 'Faturamento', iconName: 'FileText', path: '/faturamento', roles: ['admin', 'financeiro'] },
     ],
   },
   {
