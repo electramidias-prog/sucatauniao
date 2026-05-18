@@ -65,7 +65,7 @@ const EMPTY_FORM = {
   address_street: '', address_number: '', address_complement: '',
   address_neighborhood: '', address_city: '', address_state: 'MG', address_zip: '',
   client_type: 'fornecedor', status: 'ativo', operational_status: 'normal',
-  notes: '', negotiation_history: '',
+  notes: '', negotiation_history: '', qr_code_url: '',
 };
 
 const MATERIAL_LABELS: Record<string, string> = {
@@ -186,6 +186,7 @@ export function ClientsPage() {
       address_city: c.address_city || '', address_state: c.address_state || 'MG', address_zip: c.address_zip || '',
       client_type: c.client_type, status: c.status, operational_status: c.operational_status || 'normal',
       notes: c.notes || '', negotiation_history: c.negotiation_history || '',
+      qr_code_url: (c as any).qr_code_url || '',
     });
     setDialogOpen(true);
   };
@@ -285,6 +286,34 @@ export function ClientsPage() {
                 <div><Label className="text-xs">UF</Label><Input value={form.address_state} onChange={e => updateField('address_state', e.target.value)} className="h-8 text-xs" maxLength={2} /></div>
                 <div><Label className="text-xs">CEP</Label><Input value={form.address_zip} onChange={e => updateField('address_zip', e.target.value)} className="h-8 text-xs" /></div>
                 <div className="col-span-2"><Label className="text-xs">Observações</Label><Textarea value={form.notes} onChange={e => updateField('notes', e.target.value)} className="text-xs min-h-[50px]" /></div>
+                <div className="col-span-2">
+                  <Label className="text-xs">QR Code PIX para Fatura</Label>
+                  <div className="flex items-center gap-3 mt-1">
+                    {form.qr_code_url ? (
+                      <img src={form.qr_code_url} alt="QR Code PIX" className="h-20 w-20 object-contain border rounded" />
+                    ) : (
+                      <div className="h-20 w-20 border border-dashed rounded flex items-center justify-center text-[10px] text-muted-foreground">Sem QR</div>
+                    )}
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      className="h-8 text-xs"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const path = `qr-codes/${Date.now()}_${file.name}`;
+                        const { error } = await supabase.storage.from('invoices').upload(path, file, { upsert: true });
+                        if (error) { toast.error('Erro ao enviar QR: ' + error.message); return; }
+                        const { data } = supabase.storage.from('invoices').getPublicUrl(path);
+                        updateField('qr_code_url', data.publicUrl);
+                        toast.success('QR Code carregado');
+                      }}
+                    />
+                    {form.qr_code_url && (
+                      <Button variant="outline" size="sm" onClick={() => updateField('qr_code_url', '')}>Remover</Button>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="flex justify-end gap-2 mt-4">
                 <Button variant="outline" size="sm" onClick={() => { setDialogOpen(false); setEditingId(null); setForm(EMPTY_FORM); }}>Cancelar</Button>
