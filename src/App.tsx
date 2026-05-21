@@ -32,6 +32,7 @@ const EPIsPage = React.lazy(() => import('@/components/EPIsPage').then(m => ({ d
 const DDSPage = React.lazy(() => import('@/components/DDSPage').then(m => ({ default: m.DDSPage })));
 const MaquinasPage = React.lazy(() => import('@/components/MaquinasPage').then(m => ({ default: m.MaquinasPage })));
 const FaturamentoPage = React.lazy(() => import('@/components/FaturamentoPage').then(m => ({ default: m.FaturamentoPage })));
+const ChatPage = React.lazy(() => import('@/components/ChatPage').then(m => ({ default: m.ChatPage })));
 
 const queryClient = new QueryClient();
 
@@ -59,7 +60,7 @@ function AuthenticatedApp() {
       <Suspense fallback={<LoadingSpinner />}>
         <Routes>
           <Route path="/" element={<DashboardPage />} />
-          <Route path="/chat" element={<PlaceholderPage title="Chat da Equipe" />} />
+          <Route path="/chat" element={<ChatPage />} />
           <Route path="/balanca" element={<BalancaPage />} />
           <Route path="/estoque-fisico" element={<EstoqueFisicoPage />} />
           <Route path="/estoque-fiscal" element={<EstoqueFiscalPage />} />
