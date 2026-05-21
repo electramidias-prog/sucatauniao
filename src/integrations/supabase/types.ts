@@ -140,6 +140,60 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_messages: {
+        Row: {
+          attachment_name: string | null
+          attachment_type: string | null
+          attachment_url: string | null
+          channel: string
+          content: string | null
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          attachment_name?: string | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          channel: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          attachment_name?: string | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          channel?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_reads: {
+        Row: {
+          channel: string
+          id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          id?: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       checklist_records: {
         Row: {
           created_at: string
@@ -1664,6 +1718,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_chat_channel: {
+        Args: { _channel: string; _user_id: string }
+        Returns: boolean
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
