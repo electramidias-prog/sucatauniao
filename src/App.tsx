@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound.tsx";
 
 const DashboardPage = React.lazy(() => import('@/components/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const PlaceholderPage = React.lazy(() => import('@/components/PlaceholderPage').then(m => ({ default: m.PlaceholderPage })));
+const CalculadoraMTRPage = React.lazy(() => import('@/components/CalculadoraMTRPage').then(m => ({ default: m.CalculadoraMTRPage })));
 const ClientsPage = React.lazy(() => import('@/components/ClientsPage').then(m => ({ default: m.ClientsPage })));
 const BalancaPage = React.lazy(() => import('@/components/BalancaPage').then(m => ({ default: m.BalancaPage })));
 const UsersPage = React.lazy(() => import('@/components/UsersPage').then(m => ({ default: m.UsersPage })));
@@ -73,6 +74,7 @@ function AuthenticatedApp() {
           <Route path="/maquinas" element={<MaquinasPage />} />
           <Route path="/dds" element={<DDSPage />} />
           <Route path="/central-emissao" element={<CentralEmissaoPage />} />
+          <Route path="/calculadora-mtr" element={<CalculadoraMTRPage />} />
           <Route path="/relatorios" element={<RelatoriosPage />} />
           <Route path="/usuarios" element={<UsersPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />

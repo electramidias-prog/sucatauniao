@@ -30,6 +30,7 @@ export const menuSections: MenuSection[] = [
       { label: 'Estoque Físico', iconName: 'Warehouse', path: '/estoque-fisico', roles: ['admin', 'conferente', 'operador_balanca'] },
       { label: 'Estoque Fiscal', iconName: 'FileText', path: '/estoque-fiscal', roles: ['admin', 'contador', 'financeiro'] },
       { label: 'Central NF-e / MTR', iconName: 'FileSpreadsheet', path: '/central-emissao', roles: ['admin', 'financeiro'] },
+      { label: 'Calculadora MTR', iconName: 'Calculator', path: '/calculadora-mtr', roles: ['admin', 'financeiro', 'contador'] },
     ],
   },
   {
