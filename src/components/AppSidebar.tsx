@@ -12,6 +12,7 @@ import type { LucideIcon } from 'lucide-react';
 import logo from '@/assets/logo-sucata-uniao.jpg';
 import { routePreloadMap } from '@/config/routePreload';
 import { useCalendarAlertsCount } from '@/hooks/useCalendarAlertsCount';
+import { useChatUnreadCount } from '@/hooks/useChatUnreadCount';
 
 const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard, MessageSquare, Scale, Warehouse, FileText,
@@ -29,6 +30,7 @@ export function AppSidebar({ onOpenAna, onOpenCarlinhos }: AppSidebarProps) {
   const { user, logout } = useAuth();
   const userRole = user?.role || 'admin';
   const calendarAlerts = useCalendarAlertsCount();
+  const chatUnread = useChatUnreadCount();
 
   return (
     <aside
@@ -90,6 +92,16 @@ export function AppSidebar({ onOpenAna, onOpenCarlinhos }: AppSidebarProps) {
                         )}
                       >
                         {calendarAlerts > 99 ? '99+' : calendarAlerts}
+                      </span>
+                    )}
+                    {item.path === '/chat' && chatUnread > 0 && (
+                      <span
+                        className={cn(
+                          'ml-auto inline-flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold',
+                          collapsed ? 'absolute top-0 right-0 h-4 w-4' : 'h-4 min-w-[16px] px-1'
+                        )}
+                      >
+                        {chatUnread > 99 ? '99+' : chatUnread}
                       </span>
                     )}
                   </Link>
