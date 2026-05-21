@@ -74,6 +74,7 @@ function AuthenticatedApp() {
           <Route path="/maquinas" element={<MaquinasPage />} />
           <Route path="/dds" element={<DDSPage />} />
           <Route path="/central-emissao" element={<CentralEmissaoPage />} />
+          <Route path="/calculadora-mtr" element={<CalculadoraMTRPage />} />
           <Route path="/relatorios" element={<RelatoriosPage />} />
           <Route path="/usuarios" element={<UsersPage />} />
           <Route path="/auditoria" element={<AuditoriaPage />} />
