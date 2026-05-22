@@ -1,77 +1,101 @@
-# Plano: Organização e Documentação do ERP Sucata União
+## Portal do Cliente — Plano de Implementação
 
-Vou entregar **um relatório PDF completo** + **reorganização do código-fonte** em uma única passagem.
+Módulo self-service externo para fornecedores, totalmente isolado do ERP interno, com login próprio, dashboard de saldo/pesagens/pagamentos e geração de PDF.
 
----
+### 1. Banco de Dados (migração Supabase)
 
-## Etapa 1 — Auditoria Técnica (somente leitura)
+- Criar tabela `portal_credentials` (client_id, email único, password_hash, is_active, last_login_at, created_by)
+- Criar tabela `portal_sessions` (client_id, token UUID, expires_at default +8h)
+- Adicionar coluna `portal_access_enabled` em `clients` (já existe — confirmar) e `portal_user_id`
+- Tabela `portal_login_attempts` para rate limiting (ip, attempted_at, success)
+- RLS:
+  - `portal_credentials`: admin/financeiro gerenciam (ALL). Edge function usa service role para validar login.
+  - `portal_sessions`: nenhuma policy pública (apenas service role via edge).
+  - `portal_login_attempts`: idem.
+- Função `has_role` já existe e será reutilizada.
 
-Vou varrer o projeto e mapear:
+### 2. Edge Function `portal-auth`
 
-1. **Inventário de módulos** — todos os arquivos em `src/components/*Page.tsx`, rotas em `App.tsx`, itens do menu em `menu.ts` e suas permissões por papel (RBAC).
-2. **Inventário do banco** — 30+ tabelas existentes, agrupadas por domínio (Operação, Financeiro, RH, Compliance, Portal), com RLS e triggers ativos.
-3. **Storage buckets** — 7 buckets, finalidade e políticas.
-4. **Edge functions** — `ai-chat`, `create-user`.
-5. **Pendências detectadas**:
-   - Rotas órfãs (ex.: `/chat` ainda aponta para `PlaceholderPage`).
-   - Componentes existentes não roteados (ex.: `CalculadoraMTRPage`).
-   - Tabelas sem uso aparente no front.
-   - Inconsistências de RLS (ex.: papéis citados na memória que não existem no enum: "almoxarife", "encarregado", "tecnico_seguranca").
-   - Linter do Supabase (rodar `supabase--linter`).
+`supabase/functions/portal-auth/index.ts` (sem JWT, pública):
 
-## Etapa 2 — Reorganização de Pastas e Menu
+- Actions: `login`, `logout`, `validate`
+- `login`:
+  - Rate limit: bloqueia IP com 5+ falhas em 10min (consulta `portal_login_attempts`)
+  - Busca credencial por email, valida bcrypt (`npm:bcryptjs`)
+  - Cria sessão (token UUID + expires_at +8h), atualiza `last_login_at`
+  - Grava tentativa em `portal_login_attempts` e em `audit_logs` (success/fail, ip)
+  - Retorna `{ token, client_id, client_name }` — erro genérico "Credenciais inválidas"
+- `validate`: verifica token existe + não expirado → retorna `{ client_id, client_name }`
+- `logout`: deleta sessão pelo token
+- Outra edge function `portal-credentials` (admin/financeiro autenticado) para criar/redefinir credencial: faz hash bcrypt e grava em `portal_credentials`.
 
-Refatorar `src/components/` em subpastas por domínio, sem quebrar imports:
+### 3. Rotas e Layout (App.tsx)
 
-```text
-src/components/
-├── operacao/     (Balanca, EstoqueFisico, EstoqueFiscal, CentralEmissao, CalculadoraMTR)
-├── financeiro/   (ContaCorrente, Avulsos, ContasPagar, Faturamento)
-├── clientes/     (Clients, ImportMappingDialog)
-├── rh/           (Funcionarios, EPIs, DDS)
-├── compliance/   (Documentos, Maquinas)
-├── admin/        (Users, Auditoria, Configuracoes)
-├── shared/       (AppLayout, AppSidebar, NavLink, RefreshButton, etc.)
-└── ai/           (AIChatPanel)
-```
+- Rotas `/portal/login` e `/portal/dashboard` montadas FORA do `AuthenticatedApp` / `AppLayout`
+- Redirect `/portal` → `/portal/login`
+- `PortalLayout`: header preto com logo "SUCATA UNIÃO", nome do cliente, botão sair. Sem sidebar.
 
-Atualizar todos os imports em `App.tsx`, `routePreload.ts` e referências cruzadas. Revisar `menu.ts` para confirmar agrupamentos coerentes e adicionar `/calculadora-mtr` se faltar.
+### 4. Arquivos a criar
 
-## Etapa 3 — Documentação Consolidada (PDF)
+- `src/components/portal/PortalLogin.tsx` — formulário email/senha, link "Acesso ao sistema interno →"
+- `src/components/portal/PortalLayout.tsx` — header + outlet
+- `src/components/portal/PortalDashboard.tsx` — dashboard com abas/seções abaixo
+- `src/components/portal/PortalTicketPDF.ts` — gerador jsPDF
+- `src/hooks/usePortalAuth.ts` — estado via `sessionStorage`, valida token ao montar, expira em 2h inativo
+- `src/components/ClientPortalAccessDialog.tsx` — modal de gestão de acesso no ERP
+- Integração no `ClientsPage.tsx`: toggle ativo + botão "Configurar Acesso"
 
-Gerar `/mnt/documents/ERP_Sucata_Uniao_Documentacao.pdf` via `reportlab`, com seções:
+### 5. Dashboard — Seções
 
-1. **Capa** — logo/nome, versão, data, ambiente (Lovable Cloud).
-2. **Sumário Executivo** — visão geral do sistema, stack, status.
-3. **Mapa de Módulos** — tabela: Módulo · Rota · Arquivo · Papéis com acesso · Status (✅ Pronto / 🚧 Parcial / ⏳ Pendente).
-4. **Arquitetura de Dados** — diagrama textual das 30+ tabelas agrupadas por domínio, com RLS resumido.
-5. **Integrações** — Wix Webhook, Balança WebSerial, WhatsApp, OneDrive, Lovable AI (ANA + CARLINHOS).
-6. **Controle de Acesso (RBAC)** — matriz papel × módulo.
-7. **Roadmap Consolidado** — Sprints 1-5 com checklist do que foi entregue, em andamento e pendente (Portal do Cliente, Chat Global, integrações finais).
-8. **Auditoria Técnica** — pendências encontradas, riscos de segurança, recomendações priorizadas.
-9. **Estrutura de Pastas Pós-Refatoração** — árvore final do `src/`.
-10. **Anexos** — convenções (logging, exports, branding), credenciais de admin, URLs do projeto.
+1. **Card de Saldo**: soma `client_transactions` (créditos − débitos) filtrado por client_id (via edge segura ou query autenticada com token validado). Realtime subscribe em `client_transactions` filtrado por `client_id`.
+2. **Pesagens (50 últimas)**: join `weighings + weighing_fractions`. Oculta preço/valor se status ≠ finalizado. Botão "Baixar PDF" por linha.
+3. **Pagamentos**: `client_transactions` type='debit' efetivados.
+4. **Vales/Adiantamentos abertos**: type='debit' status='pendente' ou descrição ILIKE '%vale%'/'%adiantamento%'.
+5. **Extrato completo** (aba): todas as movimentações com saldo acumulado + export CSV.
 
-## Etapa 4 — README.md no Repositório
+### 6. Segurança — Acesso aos Dados
 
-Versão enxuta do PDF no `README.md` da raiz, para quem clonar o repo via GitHub ver o estado do projeto.
+Como o portal NÃO usa Supabase Auth (auth.uid() é null), criar edge function `portal-data` que:
+- Recebe `token` + `query_type` (balance | weighings | transactions | pending_vales | ticket)
+- Valida token em `portal_sessions`, recupera `client_id`
+- Executa query com service role, sempre filtrando por `client_id` da sessão
+- Nunca aceita `client_id` do cliente — sempre derivado do token
+- Nunca retorna dados bancários (pix_key, bank_account, bank_agency, bank_name)
 
-## Etapa 5 — QA do PDF
+### 7. PDF do Ticket (jsPDF)
 
-Converter cada página em imagem (`pdftoppm`) e inspecionar visualmente antes de entregar.
+Função utilitária que recebe ticket completo e gera PDF com cabeçalho Sucata União, CNPJ 49.520.286/0001-25, dados do cliente, placa, tabela de materiais (bruto/tara/líquido/preço/subtotal), totais, rodapé. Download como `ticket-{n}-{data}.pdf`.
 
----
+### 8. Gestão no ERP (ClientsPage)
 
-## O que NÃO será feito neste plano
+Botão "Portal" por linha → abre `ClientPortalAccessDialog`:
+- Status atual (ativo desde / sem acesso)
+- Toggle ativo/inativo (atualiza `portal_access_enabled`)
+- Campo email + senha (com gerador 12 chars seguros) → chama `portal-credentials` edge
+- "Redefinir senha" sempre disponível, senha nunca exibida após salvar
+- Grava em `audit_logs`
 
-- Nenhuma migração de banco / mudança de schema.
-- Nenhuma alteração de lógica de negócio nos módulos existentes.
-- Nada de novas features (Portal do Cliente, Chat real, etc.) — apenas documentadas como pendentes no roadmap.
+### 9. Convenções
 
-## Entregáveis
+- Tokens: vermelho `text-red-600`/`bg-red-600`, preto `bg-gray-950`, branco `text-white`
+- Sem dados mock, estados vazios explícitos
+- Tabelas densas (text-xs/text-[13px], py-1.5)
+- Botões Salvar/Cancelar/Fechar funcionais
+- Export CSV no extrato
+- Audit log em todas operações CUD com referência ao client_id
 
-- `/mnt/documents/ERP_Sucata_Uniao_Documentacao.pdf` (download)
-- `README.md` atualizado
-- `src/components/` reorganizado por domínio com todos os imports corrigidos
+### 10. Detalhes Técnicos
 
-Posso implementar?
+- **bcrypt na edge**: `import bcrypt from "npm:bcryptjs@2.4.3"`
+- **Edge functions configuradas com `verify_jwt = false`** em `supabase/config.toml` para `portal-auth` e `portal-data`; `portal-credentials` exige JWT (admin/financeiro)
+- **Realtime**: subscription anônima funciona com RLS — mas como portal não usa auth, criar policy SELECT em `client_transactions` para `anon` é inseguro. Alternativa: polling a cada 30s + reload manual. **Decisão**: usar polling + botão "Atualizar" (realtime real exigiria expor RLS pública). Manter o `channel` listener apenas se RLS permitir; caso contrário, polling.
+  - Aprovação: implementar polling 30s como mecanismo principal de atualização (mais seguro), mantendo botão "Atualizar".
+- Verificar coluna `portal_access_enabled` e `portal_user_id` já existem em `clients` (presentes no schema) — migração só ajusta FK se necessário.
+
+### Entregáveis
+
+- 1 migração SQL
+- 3 edge functions (`portal-auth`, `portal-data`, `portal-credentials`)
+- 6 arquivos React/TS novos
+- Edição de `App.tsx` e `ClientsPage.tsx`
+- Config functions em `supabase/config.toml`
