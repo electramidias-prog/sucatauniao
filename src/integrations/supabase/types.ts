@@ -592,7 +592,15 @@ export type Database = {
           vehicle_plate?: string | null
           whatsapp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_portal_user_id_fkey"
+            columns: ["portal_user_id"]
+            isOneToOne: false
+            referencedRelation: "portal_credentials"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       company_documents: {
         Row: {
@@ -1407,6 +1415,119 @@ export type Database = {
             columns: ["pix_key_id"]
             isOneToOne: false
             referencedRelation: "client_pix_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_credentials: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          email: string
+          id: string
+          is_active: boolean
+          last_login_at: string | null
+          password_hash: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          email: string
+          id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          password_hash: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean
+          last_login_at?: string | null
+          password_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_credentials_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portal_login_attempts: {
+        Row: {
+          attempted_at: string
+          email: string | null
+          id: string
+          ip_address: string
+          success: boolean
+        }
+        Insert: {
+          attempted_at?: string
+          email?: string | null
+          id?: string
+          ip_address: string
+          success?: boolean
+        }
+        Update: {
+          attempted_at?: string
+          email?: string | null
+          id?: string
+          ip_address?: string
+          success?: boolean
+        }
+        Relationships: []
+      }
+      portal_sessions: {
+        Row: {
+          client_id: string
+          created_at: string
+          credential_id: string | null
+          expires_at: string
+          id: string
+          ip_address: string | null
+          last_activity_at: string
+          token: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          credential_id?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          last_activity_at?: string
+          token?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          credential_id?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          last_activity_at?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_sessions_credential_id_fkey"
+            columns: ["credential_id"]
+            isOneToOne: false
+            referencedRelation: "portal_credentials"
             referencedColumns: ["id"]
           },
         ]
