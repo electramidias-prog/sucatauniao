@@ -130,6 +130,7 @@ export function ClientsPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [portalDialog, setPortalDialog] = useState<{ id: string; name: string } | null>(null);
 
   const fetchClients = useCallback(async () => {
     setLoading(true);
@@ -410,6 +411,7 @@ export function ClientsPage() {
                   <div className="flex justify-end gap-1">
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedClient(c)}><Eye className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleEdit(c)}><Edit className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 text-red-600 hover:text-red-700" title="Acesso ao Portal" onClick={() => setPortalDialog({ id: c.id, name: c.name })}><Smartphone className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(c.id)}><Trash2 className="h-3 w-3" /></Button>
                   </div>
                 </td>
@@ -418,6 +420,13 @@ export function ClientsPage() {
           </tbody>
         </table>
       </div>
+      <ClientPortalAccessDialog
+        clientId={portalDialog?.id ?? null}
+        clientName={portalDialog?.name}
+        open={!!portalDialog}
+        onOpenChange={(v) => { if (!v) setPortalDialog(null); }}
+        onSaved={reload}
+      />
     </div>
   );
 }
