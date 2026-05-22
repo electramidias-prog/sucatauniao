@@ -425,7 +425,7 @@ export function ClientsPage() {
         clientName={portalDialog?.name}
         open={!!portalDialog}
         onOpenChange={(v) => { if (!v) setPortalDialog(null); }}
-        onSaved={reload}
+        onSaved={fetchClients}
       />
     </div>
   );
