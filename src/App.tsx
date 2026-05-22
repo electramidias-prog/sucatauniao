@@ -33,6 +33,8 @@ const DDSPage = React.lazy(() => import('@/components/DDSPage').then(m => ({ def
 const MaquinasPage = React.lazy(() => import('@/components/MaquinasPage').then(m => ({ default: m.MaquinasPage })));
 const FaturamentoPage = React.lazy(() => import('@/components/FaturamentoPage').then(m => ({ default: m.FaturamentoPage })));
 const ChatPage = React.lazy(() => import('@/components/ChatPage').then(m => ({ default: m.ChatPage })));
+const PortalLogin = React.lazy(() => import('@/components/portal/PortalLogin').then(m => ({ default: m.PortalLogin })));
+const PortalDashboard = React.lazy(() => import('@/components/portal/PortalDashboard').then(m => ({ default: m.PortalDashboard })));
 
 const queryClient = new QueryClient();
 
@@ -96,7 +98,14 @@ const App = () => (
         <BrowserRouter>
           <ScrollToTop />
           <NavigationProgress />
-          <AuthenticatedApp />
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              <Route path="/portal" element={<PortalLogin />} />
+              <Route path="/portal/login" element={<PortalLogin />} />
+              <Route path="/portal/dashboard" element={<PortalDashboard />} />
+              <Route path="/*" element={<AuthenticatedApp />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
