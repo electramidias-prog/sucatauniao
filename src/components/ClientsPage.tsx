@@ -18,6 +18,7 @@ import {
   CreditCard, X, Ban, CheckCircle2,
 } from 'lucide-react';
 import { ImportMappingDialog } from '@/components/ImportMappingDialog';
+import { ClientPortalAccessDialog } from '@/components/ClientPortalAccessDialog';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { RefreshButton } from '@/components/RefreshButton';
 
