@@ -115,7 +115,7 @@ function elapsedSince(iso: string) {
   return `${h}h ${rm}min`;
 }
 
-export function BalancaPage() {
+export function BalancaFornecedoresTab() {
   const { user } = useAuth();
   const [weighings, setWeighings] = useState<Weighing[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
