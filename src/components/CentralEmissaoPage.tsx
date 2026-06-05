@@ -683,6 +683,7 @@ export function CentralEmissaoPage() {
           </CardContent>
         </Card>
       )}
+      <InternalWeighingsView />
     </div>
   );
 }
