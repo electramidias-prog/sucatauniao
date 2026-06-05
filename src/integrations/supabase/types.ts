@@ -343,6 +343,41 @@ export type Database = {
           },
         ]
       }
+      client_default_tares: {
+        Row: {
+          client_id: string
+          created_at: string
+          description: string | null
+          id: string
+          tare_weight: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          tare_weight: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          tare_weight?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_default_tares_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_pix_keys: {
         Row: {
           bank_name: string | null
@@ -1204,6 +1239,65 @@ export type Database = {
         }
         Relationships: []
       }
+      internal_weighings: {
+        Row: {
+          created_at: string
+          destination: string | null
+          employee_id: string
+          entry_at: string
+          exit_at: string | null
+          gross_weight: number | null
+          id: string
+          net_weight: number | null
+          notes: string | null
+          operator_id: string
+          status: string
+          tare_weight: number | null
+          updated_at: string
+          vehicle_plate: string
+        }
+        Insert: {
+          created_at?: string
+          destination?: string | null
+          employee_id: string
+          entry_at?: string
+          exit_at?: string | null
+          gross_weight?: number | null
+          id?: string
+          net_weight?: number | null
+          notes?: string | null
+          operator_id?: string
+          status?: string
+          tare_weight?: number | null
+          updated_at?: string
+          vehicle_plate: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string | null
+          employee_id?: string
+          entry_at?: string
+          exit_at?: string | null
+          gross_weight?: number | null
+          id?: string
+          net_weight?: number | null
+          notes?: string | null
+          operator_id?: string
+          status?: string
+          tare_weight?: number | null
+          updated_at?: string
+          vehicle_plate?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "internal_weighings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_items: {
         Row: {
           amount: number
@@ -1358,6 +1452,122 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      paid_weighing_reopenings: {
+        Row: {
+          created_at: string
+          id: string
+          operator_id: string
+          paid_weighing_id: string
+          reason: string
+          reason_text: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          operator_id?: string
+          paid_weighing_id: string
+          reason: string
+          reason_text?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          operator_id?: string
+          paid_weighing_id?: string
+          reason?: string
+          reason_text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_weighing_reopenings_paid_weighing_id_fkey"
+            columns: ["paid_weighing_id"]
+            isOneToOne: false
+            referencedRelation: "paid_weighings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      paid_weighings: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          entry_at: string
+          exit_at: string | null
+          gross_weight: number | null
+          id: string
+          invoice_id: string | null
+          net_weight: number | null
+          notes: string | null
+          operator_id: string
+          payment_at: string | null
+          payment_status: string
+          price_per_kg: number | null
+          status: string
+          tare_weight: number | null
+          total_amount: number | null
+          type: string
+          updated_at: string
+          vehicle_plate: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          entry_at?: string
+          exit_at?: string | null
+          gross_weight?: number | null
+          id?: string
+          invoice_id?: string | null
+          net_weight?: number | null
+          notes?: string | null
+          operator_id?: string
+          payment_at?: string | null
+          payment_status?: string
+          price_per_kg?: number | null
+          status?: string
+          tare_weight?: number | null
+          total_amount?: number | null
+          type: string
+          updated_at?: string
+          vehicle_plate: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          entry_at?: string
+          exit_at?: string | null
+          gross_weight?: number | null
+          id?: string
+          invoice_id?: string | null
+          net_weight?: number | null
+          notes?: string | null
+          operator_id?: string
+          payment_at?: string | null
+          payment_status?: string
+          price_per_kg?: number | null
+          status?: string
+          tare_weight?: number | null
+          total_amount?: number | null
+          type?: string
+          updated_at?: string
+          vehicle_plate?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paid_weighings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paid_weighings_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payment_settlements: {
         Row: {

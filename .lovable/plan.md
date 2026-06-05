@@ -1,101 +1,105 @@
-## Portal do Cliente — Plano de Implementação
+## Expansão do módulo /balanca — 3 abas
 
-Módulo self-service externo para fornecedores, totalmente isolado do ERP interno, com login próprio, dashboard de saldo/pesagens/pagamentos e geração de PDF.
+Mantém a tela atual como Aba 1 "Fornecedores" (intocada) e adiciona Aba 2 (Pesagens Pagas) e Aba 3 (Pesagens Internas) dentro da mesma rota.
 
-### 1. Banco de Dados (migração Supabase)
+### 1. Migração SQL (uma única migração)
 
-- Criar tabela `portal_credentials` (client_id, email único, password_hash, is_active, last_login_at, created_by)
-- Criar tabela `portal_sessions` (client_id, token UUID, expires_at default +8h)
-- Adicionar coluna `portal_access_enabled` em `clients` (já existe — confirmar) e `portal_user_id`
-- Tabela `portal_login_attempts` para rate limiting (ip, attempted_at, success)
-- RLS:
-  - `portal_credentials`: admin/financeiro gerenciam (ALL). Edge function usa service role para validar login.
-  - `portal_sessions`: nenhuma policy pública (apenas service role via edge).
-  - `portal_login_attempts`: idem.
-- Função `has_role` já existe e será reutilizada.
+Tabelas novas em `public`:
+- `paid_weighings` — tickets pagos (avulsa/cadastrada), com `net_weight` gerada, status, payment_status, vínculo opcional a `clients` e `invoices`.
+- `paid_weighing_reopenings` — histórico de reaberturas com motivo.
+- `client_default_tares` — tara padrão por cliente (única por cliente).
+- `internal_weighings` — pesagens de motoristas internos (FK em `employees`), sem pagamento, sem cupom.
 
-### 2. Edge Function `portal-auth`
+Cada `CREATE TABLE` seguido de:
+```
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.<t> TO authenticated;
+GRANT ALL ON public.<t> TO service_role;
+ALTER TABLE ... ENABLE ROW LEVEL SECURITY;
+```
 
-`supabase/functions/portal-auth/index.ts` (sem JWT, pública):
+Políticas RLS por papel (usando `has_role`):
+- `paid_weighings`, `client_default_tares`: admin, operador_balanca, financeiro (ALL com policies separadas SELECT/INSERT/UPDATE; DELETE só admin).
+- `paid_weighing_reopenings`: admin, operador_balanca (SELECT/INSERT).
+- `internal_weighings`: admin, operador_balanca, financeiro, conferente (SELECT/INSERT/UPDATE; DELETE só admin).
+- Operadores não podem deletar tickets finalizados (policy DELETE restrita a admin + status check).
 
-- Actions: `login`, `logout`, `validate`
-- `login`:
-  - Rate limit: bloqueia IP com 5+ falhas em 10min (consulta `portal_login_attempts`)
-  - Busca credencial por email, valida bcrypt (`npm:bcryptjs`)
-  - Cria sessão (token UUID + expires_at +8h), atualiza `last_login_at`
-  - Grava tentativa em `portal_login_attempts` e em `audit_logs` (success/fail, ip)
-  - Retorna `{ token, client_id, client_name }` — erro genérico "Credenciais inválidas"
-- `validate`: verifica token existe + não expirado → retorna `{ client_id, client_name }`
-- `logout`: deleta sessão pelo token
-- Outra edge function `portal-credentials` (admin/financeiro autenticado) para criar/redefinir credencial: faz hash bcrypt e grava em `portal_credentials`.
+Trigger `updated_at` em `paid_weighings` e `internal_weighings`.
 
-### 3. Rotas e Layout (App.tsx)
+Encerramento automático: agendar via `cron.schedule` (pg_cron) executando a cada 15 min UPDATE em `paid_weighings` onde `type='avulsa'` AND `status='em_aberto'` AND `entry_at < now() - interval '24 hours'` → `status='encerrado_automatico'`. Se `pg_cron` não estiver habilitado, habilitar via `CREATE EXTENSION IF NOT EXISTS pg_cron`.
 
-- Rotas `/portal/login` e `/portal/dashboard` montadas FORA do `AuthenticatedApp` / `AppLayout`
-- Redirect `/portal` → `/portal/login`
-- `PortalLayout`: header preto com logo "SUCATA UNIÃO", nome do cliente, botão sair. Sem sidebar.
+Observação: o spec usa `cpf_cnpj`, mas a tabela `clients` existente usa `document_number` — a busca usará `document_number`. O spec usa `profiles(id)` para `operator_id`; usaremos `auth.users(id)` referenciado por `user_id` consistente com o restante do projeto (campo `operator_id uuid not null default auth.uid()`).
 
-### 4. Arquivos a criar
+### 2. Estrutura de abas
 
-- `src/components/portal/PortalLogin.tsx` — formulário email/senha, link "Acesso ao sistema interno →"
-- `src/components/portal/PortalLayout.tsx` — header + outlet
-- `src/components/portal/PortalDashboard.tsx` — dashboard com abas/seções abaixo
-- `src/components/portal/PortalTicketPDF.ts` — gerador jsPDF
-- `src/hooks/usePortalAuth.ts` — estado via `sessionStorage`, valida token ao montar, expira em 2h inativo
-- `src/components/ClientPortalAccessDialog.tsx` — modal de gestão de acesso no ERP
-- Integração no `ClientsPage.tsx`: toggle ativo + botão "Configurar Acesso"
+Em `src/components/BalancaPage.tsx`: envolver o JSX atual em um `<Tabs>` (shadcn) com 3 `TabsTrigger` ("Fornecedores", "Pesagens Pagas", "Pesagens Internas"). A Aba 1 mantém 100% do conteúdo atual sem refator. Abas 2 e 3 renderizam componentes lazy.
 
-### 5. Dashboard — Seções
+### 3. Novos componentes
 
-1. **Card de Saldo**: soma `client_transactions` (créditos − débitos) filtrado por client_id (via edge segura ou query autenticada com token validado). Realtime subscribe em `client_transactions` filtrado por `client_id`.
-2. **Pesagens (50 últimas)**: join `weighings + weighing_fractions`. Oculta preço/valor se status ≠ finalizado. Botão "Baixar PDF" por linha.
-3. **Pagamentos**: `client_transactions` type='debit' efetivados.
-4. **Vales/Adiantamentos abertos**: type='debit' status='pendente' ou descrição ILIKE '%vale%'/'%adiantamento%'.
-5. **Extrato completo** (aba): todas as movimentações com saldo acumulado + export CSV.
+- `src/components/PesagensPagasTab.tsx` — sub-abas Avulsa/Cadastrada + card de caixa do dia no topo + realtime subscription em `paid_weighings`.
+- `src/components/PesagensInternasTab.tsx` — formulário + tabela aberta + finalizada com filtros.
+- `src/components/balanca/ClientSearchInline.tsx` — componente compartilhado de busca/cadastro rápido de cliente.
+- `src/components/balanca/ReopenTicketDialog.tsx` — modal de motivo de reabertura (radio + textarea condicional + audit log).
+- `src/components/balanca/ThermalReceipt.tsx` — markup oculto + estilos `@media print` 80mm + função `printReceipt(ticket)`.
+- `src/components/balanca/DefaultTareDialog.tsx` — modal de configurar tara padrão.
+- `src/components/balanca/GenerateInvoiceDialog.tsx` — seletor de período + criação de invoice + items + link nas pesagens.
 
-### 6. Segurança — Acesso aos Dados
+### 4. Aba 2 — Pesagens Pagas
 
-Como o portal NÃO usa Supabase Auth (auth.uid() é null), criar edge function `portal-data` que:
-- Recebe `token` + `query_type` (balance | weighings | transactions | pending_vales | ticket)
-- Valida token em `portal_sessions`, recupera `client_id`
-- Executa query com service role, sempre filtrando por `client_id` da sessão
-- Nunca aceita `client_id` do cliente — sempre derivado do token
-- Nunca retorna dados bancários (pix_key, bank_account, bank_agency, bank_name)
+Card fixo no topo (Caixa do Dia) com: total pesagens, quitadas, valor quitado (R$), inadimplente (R$). Realtime subscribe via `supabase.channel('paid_weighings_today')`.
 
-### 7. PDF do Ticket (jsPDF)
+Sub-aba **Avulsa**:
+- Form: cliente (search inline), placa (uppercase), peso entrada, preço/kg → "Registrar Entrada" → INSERT + emite cupom.
+- Tabela em aberto com coluna "Tempo Aberto" (timer client-side, fundo vermelho >20h), botões Pagar / Registrar Saída / Reabrir.
+- Seção separada "Encerrados automaticamente" com badge vermelho.
+- Tabela "Finalizados do dia" com exportação TXT/CSV/XLS/PDF.
 
-Função utilitária que recebe ticket completo e gera PDF com cabeçalho Sucata União, CNPJ 49.520.286/0001-25, dados do cliente, placa, tabela de materiais (bruto/tara/líquido/preço/subtotal), totais, rodapé. Download como `ticket-{n}-{data}.pdf`.
+Sub-aba **Cadastrada**:
+- Painel de empresas (clients com pesagens cadastradas OU tara padrão).
+- Botão "Nova Pesagem" pré-seleciona cliente, carrega tara padrão se houver (editável).
+- Botão "Configurar Tara Padrão" → upsert em `client_default_tares`.
+- Botão "Gerar Faturamento do Período" → modal com período → lista pesagens pagas + finalizadas → cria `invoices` + `invoice_items` + atualiza `paid_weighings.invoice_id` → PDF via jsPDF (reusar utilitário do FaturamentoPage). Aparece automaticamente em `/faturamento`.
+- Tabela finalizadas com exportação.
 
-### 8. Gestão no ERP (ClientsPage)
+Modal de **Reabertura**: RadioGroup com 4 motivos; se "outro", textarea obrigatória; confirmar desabilita até resposta; ao OK: UPDATE status='reaberto' + INSERT em `paid_weighing_reopenings` + INSERT em `audit_logs` (`new_value` com reason/reason_text, IP via header se disponível).
 
-Botão "Portal" por linha → abre `ClientPortalAccessDialog`:
-- Status atual (ativo desde / sem acesso)
-- Toggle ativo/inativo (atualiza `portal_access_enabled`)
-- Campo email + senha (com gerador 12 chars seguros) → chama `portal-credentials` edge
-- "Redefinir senha" sempre disponível, senha nunca exibida após salvar
-- Grava em `audit_logs`
+### 5. Aba 3 — Pesagens Internas
 
-### 9. Convenções
+Formulário:
+- Motorista: combobox buscando em `employees` (filtra por nome).
+- Placa: combobox de placas distintas existentes (`weighings.vehicle_plate` UNION `internal_weighings.vehicle_plate`) + permite digitar nova.
+- Peso entrada, destino (texto), observações.
+- "Registrar Entrada" → INSERT (sem cupom, sem pagamento).
 
-- Tokens: vermelho `text-red-600`/`bg-red-600`, preto `bg-gray-950`, branco `text-white`
-- Sem dados mock, estados vazios explícitos
-- Tabelas densas (text-xs/text-[13px], py-1.5)
-- Botões Salvar/Cancelar/Fechar funcionais
-- Export CSV no extrato
-- Audit log em todas operações CUD com referência ao client_id
+Tabela em aberto: botão "Registrar Saída" abre modal com tara → UPDATE status='finalizado', exit_at=now().
 
-### 10. Detalhes Técnicos
+Tabela finalizadas: filtros por período/motorista/destino + exportação TXT/CSV/XLS/PDF.
 
-- **bcrypt na edge**: `import bcrypt from "npm:bcryptjs@2.4.3"`
-- **Edge functions configuradas com `verify_jwt = false`** em `supabase/config.toml` para `portal-auth` e `portal-data`; `portal-credentials` exige JWT (admin/financeiro)
-- **Realtime**: subscription anônima funciona com RLS — mas como portal não usa auth, criar policy SELECT em `client_transactions` para `anon` é inseguro. Alternativa: polling a cada 30s + reload manual. **Decisão**: usar polling + botão "Atualizar" (realtime real exigiria expor RLS pública). Manter o `channel` listener apenas se RLS permitir; caso contrário, polling.
-  - Aprovação: implementar polling 30s como mecanismo principal de atualização (mais seguro), mantendo botão "Atualizar".
-- Verificar coluna `portal_access_enabled` e `portal_user_id` já existem em `clients` (presentes no schema) — migração só ajusta FK se necessário.
+### 6. Integração Central de Emissão
+
+Em `src/components/CentralEmissaoPage.tsx`: adicionar nova aba/seção "Pesagens Internas" que lista `internal_weighings` finalizadas (somente consulta) visível para todos os papéis listados.
+
+### 7. Cupom térmico 80mm
+
+Componente `ThermalReceipt` renderiza em div oculta com classes Tailwind + bloco `<style>` print: `@page { size: 80mm auto; margin: 0 } @media print { body * { visibility: hidden } #thermal-receipt, #thermal-receipt * { visibility: visible } }`. Função `printReceipt(data)` popula via portal e chama `window.print()`.
+
+### 8. Audit logs
+
+Helper `logAudit(table, recordId, action, oldValue, newValue)` inserindo em `audit_logs` após cada CUD nas 4 tabelas novas. Reabertura inclui `{ reason, reason_text }` em `new_value`.
+
+### 9. Exportação
+
+Helper compartilhado já existe no projeto para CSV/XLS/PDF/TXT (verificar `BalancaPage` atual). Reusar mesmo padrão usado na aba Fornecedores.
+
+### 10. Convenções
+
+- Tokens semânticos (text-red-600, bg-gray-950, text-green-600), sem hex hardcoded
+- Tabelas densas text-xs/text-[13px], py-1.5
+- Zero mock — estado vazio explícito
+- Sem timers de encerramento no frontend; tempo apenas exibido
 
 ### Entregáveis
 
-- 1 migração SQL
-- 3 edge functions (`portal-auth`, `portal-data`, `portal-credentials`)
-- 6 arquivos React/TS novos
-- Edição de `App.tsx` e `ClientsPage.tsx`
-- Config functions em `supabase/config.toml`
+- 1 migração SQL (tabelas + RLS + GRANT + trigger updated_at + pg_cron schedule)
+- 7 arquivos React novos (2 tabs + 5 dialogs/helpers)
+- Edição de `BalancaPage.tsx` (wrapping em Tabs) e `CentralEmissaoPage.tsx` (seção pesagens internas)
+- Sem rotas novas; sem novas edge functions

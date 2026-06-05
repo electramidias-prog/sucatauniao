@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { RefreshButton } from '@/components/RefreshButton';
+import { InternalWeighingsView } from '@/components/balanca/InternalWeighingsView';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -683,6 +684,7 @@ export function CentralEmissaoPage() {
           </CardContent>
         </Card>
       )}
+      <InternalWeighingsView />
     </div>
   );
 }
