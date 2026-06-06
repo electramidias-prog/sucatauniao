@@ -21,10 +21,10 @@ export function BalancaPage() {
           Fornecedores
         </TabsTrigger>
         <TabsTrigger value="pagas" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
-          Pesagens Pagas
+          Pagas
         </TabsTrigger>
         <TabsTrigger value="internas" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
-          Pesagens Internas
+          NF-e
         </TabsTrigger>
       </TabsList>
 
