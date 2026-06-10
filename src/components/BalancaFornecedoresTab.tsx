@@ -1142,12 +1142,12 @@ Obrigado pela parceria! ✅`;
                 variant="outline"
                 className="w-full"
                 onClick={async () => {
-                  const data = ticketPdfData(finalizedDialog.ticket, finalizedDialog.fractions);
-                  const doc = await buildTicketPdf(data);
-                  doc.save(ticketPdfFilename(data));
+                  const dadosImg = ticketDadosImagem(finalizedDialog.ticket, finalizedDialog.fractions);
+                  try { await baixarTicketPNG(dadosImg, { auditTable: 'weighings', auditRecordId: finalizedDialog.ticket.id }); }
+                  catch (e) { console.error(e); toast.error('Erro ao gerar imagem'); }
                 }}
               >
-                Apenas baixar PDF
+                Apenas baixar PNG
               </Button>
             </div>
           )}
