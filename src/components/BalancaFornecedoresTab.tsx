@@ -245,6 +245,29 @@ export function BalancaFornecedoresTab() {
     }
   };
 
+  // Paste image (Ctrl+V) while discharge modal is open
+  useEffect(() => {
+    if (!dischargeFor) return;
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const blob = item.getAsFile();
+          if (blob) {
+            e.preventDefault();
+            const ext = (blob.type.split('/')[1] || 'png').split(';')[0];
+            const file = new File([blob], `foto-carga-${Date.now()}.${ext}`, { type: blob.type || 'image/png' });
+            uploadPhoto(file);
+          }
+          break;
+        }
+      }
+    };
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [dischargeFor]);
+
   // ───────── Open Ticket ─────────
   const resetNewTicket = () => {
     setShowNewTicket(false);
@@ -820,21 +843,55 @@ Obrigado pela parceria! ✅`;
                 </div>
 
                 {/* Photo */}
-                <div className="flex items-center gap-3">
-                  <label className="inline-flex items-center gap-2 cursor-pointer">
-                    <input type="file" accept="image/*" capture="environment" className="hidden"
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ''; }} />
-                    <Button variant="outline" size="sm" asChild>
-                      <span className="gap-1 inline-flex items-center">
-                        <Camera className="h-3 w-3" />
-                        {dForm.photo_uploading ? 'Enviando...' : 'Foto da carga'}
-                      </span>
-                    </Button>
-                  </label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <label className="inline-flex items-center gap-2 cursor-pointer">
+                      <input type="file" accept="image/*" capture="environment" className="hidden"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ''; }} />
+                      <Button variant="outline" size="sm" asChild>
+                        <span className="gap-1 inline-flex items-center">
+                          <Camera className="h-3 w-3" />
+                          {dForm.photo_uploading ? 'Enviando...' : 'Foto da carga'}
+                        </span>
+                      </Button>
+                    </label>
+                    <div
+                      tabIndex={0}
+                      onPaste={(e) => {
+                        const items = e.clipboardData?.items;
+                        if (!items) return;
+                        for (const item of Array.from(items)) {
+                          if (item.type.startsWith('image/')) {
+                            const blob = item.getAsFile();
+                            if (blob) {
+                              e.preventDefault();
+                              const ext = (blob.type.split('/')[1] || 'png').split(';')[0];
+                              const file = new File([blob], `foto-carga-${Date.now()}.${ext}`, { type: blob.type || 'image/png' });
+                              uploadPhoto(file);
+                            }
+                            break;
+                          }
+                        }
+                      }}
+                      className="flex-1 min-w-[200px] text-xs text-muted-foreground border border-dashed rounded px-2 py-1.5 cursor-text focus:outline-none focus:ring-1 focus:ring-primary"
+                    >
+                      Clique aqui e cole a imagem (Ctrl+V)
+                    </div>
+                  </div>
                   {dForm.photo_url && (
-                    <a href={dForm.photo_url} target="_blank" rel="noreferrer">
-                      <img src={dForm.photo_url} alt="" className="h-12 w-12 object-cover rounded border" />
-                    </a>
+                    <div className="relative inline-block">
+                      <a href={dForm.photo_url} target="_blank" rel="noreferrer">
+                        <img src={dForm.photo_url} alt="" className="h-20 w-20 object-cover rounded border" />
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => setDForm((p) => ({ ...p, photo_url: '' }))}
+                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow"
+                        aria-label="Remover foto"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
                   )}
                 </div>
 
