@@ -73,6 +73,7 @@ function statusFor(expiry: string | null) {
 export function DocumentosPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
+  const canEdit = !!user;
   const [docs, setDocs] = useState<Doc[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -212,12 +213,12 @@ export function DocumentosPage() {
         </div>
         <div className="flex items-center gap-2">
           <RefreshButton onRefresh={refresh} isRefreshing={isRefreshing} lastRefreshAt={lastRefreshAt} />
-          {isAdmin && (
+          {canEdit && (
             <Button variant="outline" size="icon" onClick={() => setCatModalOpen(true)} title="Gerenciar categorias">
               <Settings className="h-4 w-4" />
             </Button>
           )}
-          {isAdmin && (
+          {canEdit && (
             <Button onClick={openNew}><Plus className="w-4 h-4" /> Novo Documento</Button>
           )}
         </div>
@@ -267,15 +268,15 @@ export function DocumentosPage() {
                           <Download className="w-4 h-4" />
                         </Button>
                       )}
+                      {canEdit && (
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(d)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      )}
                       {isAdmin && (
-                        <>
-                          <Button size="icon" variant="ghost" onClick={() => openEdit(d)}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button size="icon" variant="ghost" onClick={() => remove(d)}>
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </>
+                        <Button size="icon" variant="ghost" onClick={() => remove(d)}>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
                       )}
                     </div>
                   </TableCell>

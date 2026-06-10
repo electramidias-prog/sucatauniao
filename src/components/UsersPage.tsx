@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Plus, Shield, Trash2, UserCog, Users, Search, Eye, EyeOff } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 
 interface UserRow {
   user_id: string;
@@ -45,7 +46,7 @@ export function UsersPage() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ email: '', password: '', full_name: '', role: 'operador_balanca' });
+  const [form, setForm] = useState({ email: '', password: '', full_name: '', role: 'operador_balanca', is_admin: false });
   const [saving, setSaving] = useState(false);
 
   const fetchUsers = useCallback(async () => {
@@ -87,14 +88,15 @@ export function UsersPage() {
     }
     setSaving(true);
     try {
+      const finalRole = form.is_admin ? 'admin' : form.role;
       const { data, error } = await supabase.functions.invoke('create-user', {
-        body: { email: form.email, password: form.password, full_name: form.full_name, role: form.role },
+        body: { email: form.email, password: form.password, full_name: form.full_name, role: finalRole },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       toast.success(`Usuário ${form.full_name} criado com sucesso!`);
       setDialogOpen(false);
-      setForm({ email: '', password: '', full_name: '', role: 'operador_balanca' });
+      setForm({ email: '', password: '', full_name: '', role: 'operador_balanca', is_admin: false });
       fetchUsers();
     } catch (err: any) {
       toast.error('Erro: ' + (err?.message || 'Falha ao criar'));
@@ -213,7 +215,7 @@ export function UsersPage() {
       </div>
 
       {/* Create dialog */}
-      <Dialog open={dialogOpen} onOpenChange={o => { setDialogOpen(o); if (!o) setForm({ email: '', password: '', full_name: '', role: 'operador_balanca' }); }}>
+      <Dialog open={dialogOpen} onOpenChange={o => { setDialogOpen(o); if (!o) setForm({ email: '', password: '', full_name: '', role: 'operador_balanca', is_admin: false }); }}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Novo Usuário</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
@@ -240,15 +242,23 @@ export function UsersPage() {
               </div>
             </div>
             <div>
-              <Label className="text-xs">Cargo</Label>
-              <Select value={form.role} onValueChange={v => setForm(p => ({ ...p, role: v }))}>
+              <Label className="text-xs">Cargo (descritivo)</Label>
+              <Select value={form.role} onValueChange={v => setForm(p => ({ ...p, role: v }))} disabled={form.is_admin}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(ROLE_LABELS).map(([k, v]) => (
+                  {Object.entries(ROLE_LABELS).filter(([k]) => k !== 'admin').map(([k, v]) => (
                     <SelectItem key={k} value={k}>{v}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[10px] text-muted-foreground mt-1">Apenas descritivo — não altera permissões.</p>
+            </div>
+            <div className="flex items-center justify-between rounded border p-2">
+              <div>
+                <Label className="text-xs">Acesso de Administrador</Label>
+                <p className="text-[10px] text-muted-foreground">Pode excluir registros, alterar preços e gerenciar usuários.</p>
+              </div>
+              <Switch checked={form.is_admin} onCheckedChange={(v) => setForm(p => ({ ...p, is_admin: v }))} />
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-4">

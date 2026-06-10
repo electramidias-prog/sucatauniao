@@ -10,6 +10,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { NavigationProgress } from "@/components/NavigationProgress";
 import NotFound from "./pages/NotFound.tsx";
+import { Navigate } from "react-router-dom";
 
 const DashboardPage = React.lazy(() => import('@/components/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const PlaceholderPage = React.lazy(() => import('@/components/PlaceholderPage').then(m => ({ default: m.PlaceholderPage })));
@@ -57,6 +58,10 @@ function AuthenticatedApp() {
 
   if (!user) return <LoginPage />;
 
+  const isAdmin = user.role === 'admin';
+  const AdminOnly = ({ children }: { children: React.ReactNode }) =>
+    isAdmin ? <>{children}</> : <Navigate to="/" replace />;
+
   return (
     <AppLayout>
       <Suspense fallback={<LoadingSpinner />}>
@@ -79,9 +84,9 @@ function AuthenticatedApp() {
           <Route path="/central-emissao" element={<CentralEmissaoPage />} />
           <Route path="/calculadora-mtr" element={<CalculadoraMTRPage />} />
           <Route path="/relatorios" element={<RelatoriosPage />} />
-          <Route path="/usuarios" element={<UsersPage />} />
-          <Route path="/auditoria" element={<AuditoriaPage />} />
-          <Route path="/configuracoes" element={<ConfiguracoesPage />} />
+          <Route path="/usuarios" element={<AdminOnly><UsersPage /></AdminOnly>} />
+          <Route path="/auditoria" element={<AdminOnly><AuditoriaPage /></AdminOnly>} />
+          <Route path="/configuracoes" element={<AdminOnly><ConfiguracoesPage /></AdminOnly>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

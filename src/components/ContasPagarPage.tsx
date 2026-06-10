@@ -97,7 +97,7 @@ export function ContasPagarPage() {
   const { user } = useAuth();
   const role = user?.role;
   const isAdmin = role === "admin";
-  const canEdit = isAdmin || role === "financeiro";
+  const canEdit = !!user;
 
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);

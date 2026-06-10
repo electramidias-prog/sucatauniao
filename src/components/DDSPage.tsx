@@ -28,7 +28,8 @@ const REASONS = ['Incidente','Mudança Operacional','Novo Equipamento','Alerta d
 
 export function DDSPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'financeiro';
+  const isAdmin = user?.role === 'admin';
+  const canManage = !!user;
 
   const [mode, setMode] = useState<Mode | null>(null);
   const [themes, setThemes] = useState<Theme[]>([]);
@@ -122,7 +123,7 @@ export function DDSPage() {
 
   // Toggle mode
   const switchMode = async (newMode: 'semanal' | 'diario') => {
-    if (!isAdmin) return toast.error('Sem permissão');
+    if (!user) return toast.error('Sem permissão');
     if (newMode === 'diario') { setModeOpen(true); return; }
     // back to weekly: end current, insert weekly
     if (mode?.id) await supabase.from('dds_operation_mode').update({ ended_at: new Date().toISOString() }).eq('id', mode.id);
@@ -216,7 +217,7 @@ export function DDSPage() {
               {isDaily && mode?.reason && <p className="text-[11px] text-muted-foreground">Motivo: {mode.reason} • Retorno previsto: {mode.expected_end_date || '—'}</p>}
             </div>
           </div>
-          {isAdmin && (
+          {canManage && (
             <div className="flex gap-2">
               <Button size="sm" variant={!isDaily?'default':'outline'} onClick={()=>switchMode('semanal')}>Semanal</Button>
               <Button size="sm" variant={isDaily?'destructive':'outline'} onClick={()=>switchMode('diario')}>Diário</Button>
