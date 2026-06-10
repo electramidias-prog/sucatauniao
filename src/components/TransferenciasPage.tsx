@@ -215,13 +215,21 @@ export function TransferenciasPage() {
     setLoading(true);
     let q = supabase
       .from('transfers')
-      .select('*, clients:client_id(id,name,document_number), weighings:weighing_id(id,ticket_number), paid_profile:paid_by(full_name)')
+      .select('*, clients:client_id(id,name,document_number), weighings:weighing_id(id,ticket_number)')
       .order('created_at', { ascending: false });
     if (dateFrom) q = q.gte('created_at', dateFrom);
     if (dateTo) q = q.lte('created_at', dateTo + 'T23:59:59');
     const { data, error } = await q;
-    if (error) { toast.error('Erro ao carregar transferências'); console.error(error); }
-    else setTransfers((data as any[]) || []);
+    if (error) { toast.error('Erro ao carregar transferências'); console.error(error); setLoading(false); return; }
+    const list = ((data as any[]) || []) as Transfer[];
+    // Hydrate paid_by full names from profiles
+    const ids = Array.from(new Set(list.map((t) => t.paid_by).filter(Boolean))) as string[];
+    if (ids.length) {
+      const { data: profs } = await supabase.from('profiles').select('user_id, full_name').in('user_id', ids);
+      const map = new Map<string, string>((profs || []).map((p: any) => [p.user_id, p.full_name]));
+      list.forEach((t) => { if (t.paid_by) t.paid_profile = { full_name: map.get(t.paid_by) || null }; });
+    }
+    setTransfers(list);
     setLoading(false);
   }, [dateFrom, dateTo]);
 
