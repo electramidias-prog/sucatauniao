@@ -28,7 +28,7 @@ export function AppSidebar({ onOpenAna, onOpenCarlinhos }: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
-  const userRole = user?.role || 'admin';
+  const userRole = user?.role || 'operador_balanca';
   const calendarAlerts = useCalendarAlertsCount();
   const chatUnread = useChatUnreadCount();
 
