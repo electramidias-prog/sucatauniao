@@ -8,7 +8,8 @@ export interface ReceiptData {
   grossWeight: number;
   tareWeight?: number | null;
   netWeight?: number | null;
-  pricePerKg?: number | null;
+  tarifa?: number | null;
+  tarifaOrigem?: 'global' | 'customizada' | null;
   totalAmount?: number | null;
   paymentStatus?: 'pago' | 'nao_pago';
   finalized?: boolean;
@@ -47,7 +48,7 @@ export function printReceipt(d: ReceiptData) {
     ${d.finalized ? `
       <div class="row"><span>Tara:</span><span>${fmtKg(d.tareWeight)}</span></div>
       <div class="row b"><span>Líquido:</span><span>${fmtKg(d.netWeight)}</span></div>
-      <div class="row"><span>Preço/kg:</span><span>${fmtBRL(d.pricePerKg)}</span></div>
+      <div class="row"><span>Tarifa ciclo:</span><span>${fmtBRL(d.tarifa)}${d.tarifaOrigem ? ` (${d.tarifaOrigem === 'customizada' ? 'pers.' : 'padrão'})` : ''}</span></div>
       <div class="row b"><span>TOTAL:</span><span>${fmtBRL(d.totalAmount)}</span></div>
     ` : ''}
     <hr/>
