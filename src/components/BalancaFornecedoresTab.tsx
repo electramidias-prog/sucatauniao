@@ -667,6 +667,7 @@ Obrigado pela parceria! ✅`;
                   <TableHead className="text-right">Valor</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Data</TableHead>
+                  <TableHead className="w-[60px]">Foto</TableHead>
                   <TableHead className="w-[80px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -687,6 +688,7 @@ Obrigado pela parceria! ✅`;
                       <TableCell className="text-right font-mono font-semibold">{fmtBRL(w.total_value || 0)}</TableCell>
                       <TableCell><Badge variant={st.variant}>{st.label}</Badge></TableCell>
                       <TableCell className="text-xs text-muted-foreground">{fmtDateTime(w.created_at)}</TableCell>
+                      <TableCell><PhotoThumb url={w.photo_url} onOpen={setViewPhotoUrl} /></TableCell>
                       <TableCell>
                         <Button variant="ghost" size="icon" onClick={() => handleViewTicket(w)}>
                           <Eye className="h-4 w-4" />
@@ -761,6 +763,11 @@ Obrigado pela parceria! ✅`;
             <div className="space-y-2">
               <Label>Observações</Label>
               <Textarea rows={2} value={ticketNotes} onChange={(e) => setTicketNotes(e.target.value)} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Foto da carga</Label>
+              <PhotoField value={ticketPhotoUrl} onChange={setTicketPhotoUrl} folder="tickets" />
             </div>
           </div>
           <DialogFooter>
@@ -853,55 +860,12 @@ Obrigado pela parceria! ✅`;
 
                 {/* Photo */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <label className="inline-flex items-center gap-2 cursor-pointer">
-                      <input type="file" accept="image/*" capture="environment" className="hidden"
-                        onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = ''; }} />
-                      <Button variant="outline" size="sm" asChild>
-                        <span className="gap-1 inline-flex items-center">
-                          <Camera className="h-3 w-3" />
-                          {dForm.photo_uploading ? 'Enviando...' : 'Foto da carga'}
-                        </span>
-                      </Button>
-                    </label>
-                    <div
-                      tabIndex={0}
-                      onPaste={(e) => {
-                        const items = e.clipboardData?.items;
-                        if (!items) return;
-                        for (const item of Array.from(items)) {
-                          if (item.type.startsWith('image/')) {
-                            const blob = item.getAsFile();
-                            if (blob) {
-                              e.preventDefault();
-                              const ext = (blob.type.split('/')[1] || 'png').split(';')[0];
-                              const file = new File([blob], `foto-carga-${Date.now()}.${ext}`, { type: blob.type || 'image/png' });
-                              uploadPhoto(file);
-                            }
-                            break;
-                          }
-                        }
-                      }}
-                      className="flex-1 min-w-[200px] text-xs text-muted-foreground border border-dashed rounded px-2 py-1.5 cursor-text focus:outline-none focus:ring-1 focus:ring-primary"
-                    >
-                      Clique aqui e cole a imagem (Ctrl+V)
-                    </div>
-                  </div>
-                  {dForm.photo_url && (
-                    <div className="relative inline-block">
-                      <a href={dForm.photo_url} target="_blank" rel="noreferrer">
-                        <img src={dForm.photo_url} alt="" className="h-20 w-20 object-cover rounded border" />
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() => setDForm((p) => ({ ...p, photo_url: '' }))}
-                        className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow"
-                        aria-label="Remover foto"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )}
+                  <Label className="text-xs">Foto da carga</Label>
+                  <PhotoField
+                    value={dForm.photo_url || null}
+                    onChange={(u) => setDForm((p) => ({ ...p, photo_url: u || '' }))}
+                    folder="discharges"
+                  />
                 </div>
 
                 {/* Live calculations */}
@@ -1078,6 +1042,8 @@ Obrigado pela parceria! ✅`;
           )}
         </DialogContent>
       </Dialog>
+
+      <PhotoViewDialog url={viewPhotoUrl} onClose={() => setViewPhotoUrl(null)} />
     </div>
   );
 }
