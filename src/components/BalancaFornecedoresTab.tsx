@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/table';
 import {
   Plus, Search, Scale, Truck, FileText, Eye, Printer,
-  CheckCircle2, Clock, Package, X, Weight, Camera, MessageCircle, Wifi,
+  CheckCircle2, Clock, Package, X, Weight, MessageCircle, Wifi,
   PackageOpen, Hourglass,
 } from 'lucide-react';
 import { toast } from 'sonner';
