@@ -168,22 +168,29 @@ function AvulsaSection({
   const [client, setClient] = useState<SelectedClient | null>(null);
   const [plate, setPlate] = useState('');
   const [gross, setGross] = useState('');
-  const [price, setPrice] = useState('');
+  const [tarifa, setTarifa] = useState<TarifaPesagem | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!client) { setTarifa(null); return; }
+    getTarifaPesagem(client.id).then(t => { if (!cancelled) setTarifa(t); });
+    return () => { cancelled = true; };
+  }, [client]);
+
   const submit = async () => {
-    if (!client || !plate || !gross || !price) {
-      toast.error('Preencha cliente, placa, peso e preço');
+    if (!client || !plate || !gross) {
+      toast.error('Preencha cliente, placa e peso de entrada');
       return;
     }
     setBusy(true);
+    const t = tarifa ?? await getTarifaPesagem(client.id);
     const payload = {
       type: 'avulsa' as const,
       client_id: client.id,
       vehicle_plate: plate.toUpperCase(),
       gross_weight: Number(gross),
-      price_per_kg: Number(price),
       photo_url: photoUrl || null,
     };
     const { data, error } = await supabase.from('paid_weighings').insert(payload as any).select('*,clients(name,document_number)').single();
@@ -192,7 +199,7 @@ function AvulsaSection({
       toast.error('Erro: ' + (error?.message || ''));
       return;
     }
-    await logAudit({ table: 'paid_weighings', recordId: (data as any).id, action: 'INSERT', newValue: payload });
+    await logAudit({ table: 'paid_weighings', recordId: (data as any).id, action: 'INSERT', newValue: { ...payload, tarifa_prevista: t.valor, tarifa_origem: t.origem } });
     toast.success('Entrada registrada');
     printReceipt({
       ticketId: (data as any).id,
@@ -202,13 +209,14 @@ function AvulsaSection({
       vehiclePlate: plate.toUpperCase(),
       entryAt: (data as any).entry_at,
       grossWeight: Number(gross),
-      pricePerKg: Number(price),
+      tarifa: t.valor,
+      tarifaOrigem: t.origem,
       paymentStatus: 'nao_pago',
     });
     setClient(null);
     setPlate('');
     setGross('');
-    setPrice('');
+    setTarifa(null);
     setPhotoUrl(null);
     onReload();
   };
@@ -234,9 +242,9 @@ function AvulsaSection({
               <Label className="text-xs">Peso Entrada (kg)</Label>
               <Input type="number" step="0.001" value={gross} onChange={e => setGross(e.target.value)} />
             </div>
-            <div>
-              <Label className="text-xs">Preço/kg (R$)</Label>
-              <Input type="number" step="0.0001" value={price} onChange={e => setPrice(e.target.value)} />
+            <div className="flex flex-col justify-end">
+              <Label className="text-xs">Tarifa do ciclo</Label>
+              <TarifaBadge tarifa={tarifa} />
             </div>
           </div>
           <Button onClick={submit} disabled={busy} className="bg-red-600 hover:bg-red-700">
