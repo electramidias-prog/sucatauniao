@@ -7,6 +7,7 @@ import {
   LayoutDashboard, MessageSquare, Scale, Warehouse, FileText,
   Users, Wallet, Calculator, BarChart3, Shield, ScrollText, Settings,
   ChevronLeft, ChevronRight, LogOut, Bot, HardHat, FileSpreadsheet, Calendar,
+  ArrowLeftRight,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import logo from '@/assets/logo-sucata-uniao.jpg';
@@ -16,7 +17,7 @@ import { useChatUnreadCount } from '@/hooks/useChatUnreadCount';
 
 const iconMap: Record<string, LucideIcon> = {
   LayoutDashboard, MessageSquare, Scale, Warehouse, FileText,
-  Users, Wallet, Calculator, BarChart3, Shield, ScrollText, Settings, FileSpreadsheet, Calendar,
+  Users, Wallet, Calculator, BarChart3, Shield, ScrollText, Settings, FileSpreadsheet, Calendar, ArrowLeftRight,
 };
 
 interface AppSidebarProps {
