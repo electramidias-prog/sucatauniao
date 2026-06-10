@@ -26,6 +26,8 @@ import {
 import { toast } from 'sonner';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { RefreshButton } from '@/components/RefreshButton';
+import { PhotoField } from './balanca/PhotoField';
+import { PhotoThumb, PhotoViewDialog } from './balanca/PhotoViewDialog';
 
 // ───────── Types ─────────
 interface Client {
@@ -54,6 +56,7 @@ interface Weighing {
   notes: string | null;
   created_at: string;
   created_by: string | null;
+  photo_url: string | null;
   clients?: { name: string; document_number: string; phone?: string | null; whatsapp?: string | null };
 }
 
@@ -133,7 +136,11 @@ export function BalancaFornecedoresTab() {
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [grossInitial, setGrossInitial] = useState('');
   const [ticketNotes, setTicketNotes] = useState('');
+  const [ticketPhotoUrl, setTicketPhotoUrl] = useState<string | null>(null);
   const [savingTicket, setSavingTicket] = useState(false);
+
+  // ── Photo viewer (shared) ──
+  const [viewPhotoUrl, setViewPhotoUrl] = useState<string | null>(null);
 
   // ── Discharge dialog ──
   const [dischargeFor, setDischargeFor] = useState<Weighing | null>(null);
@@ -276,6 +283,7 @@ export function BalancaFornecedoresTab() {
     setVehiclePlate('');
     setGrossInitial('');
     setTicketNotes('');
+    setTicketPhotoUrl(null);
   };
 
   const handleOpenTicket = async () => {
@@ -297,6 +305,7 @@ export function BalancaFornecedoresTab() {
           price_per_kg: 0,
           status: 'em_aberto',
           notes: ticketNotes || null,
+          photo_url: ticketPhotoUrl || null,
           created_by: user?.id || null,
         })
         .select('ticket_number')
