@@ -28,6 +28,8 @@ import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { RefreshButton } from '@/components/RefreshButton';
 import { PhotoField } from './balanca/PhotoField';
 import { PhotoThumb, PhotoViewDialog } from './balanca/PhotoViewDialog';
+import { buildTicketPdf, buildWhatsappMessage, ticketPdfFilename, type TicketPdfData } from './balanca/TicketPdf';
+import { logAudit } from './balanca/auditLog';
 
 // ───────── Types ─────────
 interface Client {
@@ -141,6 +143,10 @@ export function BalancaFornecedoresTab() {
 
   // ── Photo viewer (shared) ──
   const [viewPhotoUrl, setViewPhotoUrl] = useState<string | null>(null);
+
+  // ── Post-finalize WhatsApp dialog ──
+  const [finalizedDialog, setFinalizedDialog] = useState<{ ticket: Weighing; fractions: Fraction[] } | null>(null);
+  const [waFallback, setWaFallback] = useState<string | null>(null);
 
   // ── Discharge dialog ──
   const [dischargeFor, setDischargeFor] = useState<Weighing | null>(null);
@@ -435,6 +441,7 @@ export function BalancaFornecedoresTab() {
     setSavingDischarge(false);
     if (!ok) return;
     toast.success(`Ticket #${dischargeFor.ticket_number} finalizado e lançado na conta corrente`);
+    setFinalizedDialog({ ticket: dischargeFor, fractions });
     closeDischarge();
     refresh();
   };
@@ -454,6 +461,47 @@ export function BalancaFornecedoresTab() {
 
   // ───────── Print / WhatsApp ─────────
   const handlePrint = () => window.print();
+
+  const ticketPdfData = (t: Weighing, fracs: Fraction[]): TicketPdfData => ({
+    ticket_number: t.ticket_number,
+    closed_at: new Date().toISOString(),
+    client_name: t.clients?.name || '—',
+    client_document: t.clients?.document_number || '',
+    vehicle_plate: t.vehicle_plate,
+    photo_url: t.photo_url,
+    fractions: fracs.map((f) => ({
+      material_type: f.material_type,
+      previous_weight: Number(f.previous_weight || 0),
+      current_tare: Number(f.current_tare || 0),
+      net_weight: Number(f.net_weight || 0),
+      final_weight: Number(f.final_weight || 0),
+      price_per_kg: Number(f.price_per_kg || 0),
+      subtotal: Number(f.subtotal || 0),
+    })),
+  });
+
+  const sendTicketWhatsapp = async (t: Weighing, fracs: Fraction[]) => {
+    if (fracs.length === 0) { toast.error('Ticket sem descargas'); return; }
+    const data = ticketPdfData(t, fracs);
+    try {
+      const doc = await buildTicketPdf(data);
+      doc.save(ticketPdfFilename(data));
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao gerar PDF');
+      return;
+    }
+    const msg = buildWhatsappMessage(data);
+    const phone = (t.clients?.whatsapp || t.clients?.phone || '').replace(/\D/g, '');
+    if (!phone) {
+      setWaFallback(msg);
+      toast.error('Cliente sem telefone cadastrado — copie a mensagem manualmente');
+      return;
+    }
+    const url = `https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+    await logAudit({ table: 'weighings', recordId: t.id, action: 'UPDATE', newValue: { audit_action: 'WHATSAPP_SENT' } });
+  };
 
   const buildWhatsappUrl = (t: Weighing, fracs: Fraction[]) => {
     const phone = (t.clients?.whatsapp || t.clients?.phone || '').replace(/\D/g, '');
@@ -647,9 +695,22 @@ Obrigado pela parceria! ✅`;
                       <TableCell className="text-xs text-muted-foreground">{fmtDateTime(w.created_at)}</TableCell>
                       <TableCell><PhotoThumb url={w.photo_url} onOpen={setViewPhotoUrl} /></TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => handleViewTicket(w)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleViewTicket(w)} title="Visualizar">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {w.status === 'concluido' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs border-green-600 text-green-700 hover:bg-green-50"
+                              onClick={() => sendTicketWhatsapp(w, fractionsByWeighing[w.id] || [])}
+                              title="Enviar comprovante no WhatsApp"
+                            >
+                              📲 WhatsApp
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -1001,6 +1062,61 @@ Obrigado pela parceria! ✅`;
       </Dialog>
 
       <PhotoViewDialog url={viewPhotoUrl} onClose={() => setViewPhotoUrl(null)} />
+
+      {/* ═══════ POST-FINALIZE WHATSAPP DIALOG ═══════ */}
+      <Dialog open={!!finalizedDialog} onOpenChange={(o) => { if (!o) setFinalizedDialog(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-700">
+              <CheckCircle2 className="h-5 w-5" /> Ticket #{finalizedDialog?.ticket.ticket_number} finalizado
+            </DialogTitle>
+          </DialogHeader>
+          {finalizedDialog && (
+            <div className="space-y-3 text-sm">
+              <p>Comprovante pronto. Clique abaixo para baixar o PDF e enviar pelo WhatsApp.</p>
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                onClick={async () => {
+                  await sendTicketWhatsapp(finalizedDialog.ticket, finalizedDialog.fractions);
+                }}
+              >
+                📲 Enviar comprovante no WhatsApp
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={async () => {
+                  const data = ticketPdfData(finalizedDialog.ticket, finalizedDialog.fractions);
+                  const doc = await buildTicketPdf(data);
+                  doc.save(ticketPdfFilename(data));
+                }}
+              >
+                Apenas baixar PDF
+              </Button>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setFinalizedDialog(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══════ WHATSAPP FALLBACK (sem telefone) ═══════ */}
+      <Dialog open={!!waFallback} onOpenChange={(o) => { if (!o) setWaFallback(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cliente sem telefone</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Cliente sem telefone cadastrado — copie a mensagem abaixo para enviar manualmente.
+          </p>
+          <Textarea rows={12} readOnly value={waFallback || ''} className="text-xs font-mono" />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { navigator.clipboard.writeText(waFallback || ''); toast.success('Mensagem copiada'); }}>Copiar</Button>
+            <Button onClick={() => setWaFallback(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
