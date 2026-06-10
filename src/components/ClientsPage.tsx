@@ -21,6 +21,7 @@ import { ImportMappingDialog } from '@/components/ImportMappingDialog';
 import { ClientPortalAccessDialog } from '@/components/ClientPortalAccessDialog';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { RefreshButton } from '@/components/RefreshButton';
+import { PhotoViewDialog } from '@/components/balanca/PhotoViewDialog';
 
 // ─── Types ───
 interface Client {
@@ -45,7 +46,7 @@ interface Weighing {
   id: string; client_id: string; ticket_number: number; vehicle_plate: string | null;
   material_type: string; gross_weight: number; tare_weight: number; net_weight: number;
   price_per_kg: number; total_value: number; status: string; settlement_id: string | null;
-  created_at: string;
+  created_at: string; photo_url?: string | null;
 }
 
 interface Transaction {
@@ -519,6 +520,7 @@ function ClientProfile({ client, onBack, userId }: { client: Client; onBack: () 
             <h3 className="text-sm font-semibold text-primary">Histórico de Negociações</h3>
             <p className="text-xs text-muted-foreground whitespace-pre-wrap">{c.negotiation_history || 'Nenhum histórico registrado.'}</p>
           </CardContent></Card>
+          <ClientPhotoHistory clientId={c.id} />
         </TabsContent>
 
         {/* ─── TAB: PIX ─── */}
@@ -551,6 +553,103 @@ function ClientProfile({ client, onBack, userId }: { client: Client; onBack: () 
 // ═══════════════════════════════════════
 // ─── PIX KEYS TAB ───
 // ═══════════════════════════════════════
+function ClientPhotoHistory({ clientId }: { clientId: string }) {
+  const [rows, setRows] = useState<Array<{
+    id: string;
+    when: string;
+    ticket: number | null;
+    material: string | null;
+    net: number;
+    photo: string;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewUrl, setViewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const [wRes, fRes] = await Promise.all([
+        supabase
+          .from('weighings')
+          .select('id, ticket_number, material_type, net_weight, photo_url, created_at')
+          .eq('client_id', clientId)
+          .not('photo_url', 'is', null),
+        supabase
+          .from('weighing_fractions')
+          .select('id, sequence_number, material_type, final_weight, net_weight, photo_url, created_at, weighing_id, weighings!inner(client_id, ticket_number)')
+          .not('photo_url', 'is', null)
+          .eq('weighings.client_id', clientId),
+      ]);
+      if (cancelled) return;
+      const list: typeof rows = [];
+      (wRes.data as any[] | null)?.forEach((w) => {
+        if (w.photo_url) list.push({
+          id: `w-${w.id}`,
+          when: w.created_at,
+          ticket: w.ticket_number,
+          material: w.material_type,
+          net: Number(w.net_weight || 0),
+          photo: w.photo_url,
+        });
+      });
+      (fRes.data as any[] | null)?.forEach((f) => {
+        if (f.photo_url) list.push({
+          id: `f-${f.id}`,
+          when: f.created_at,
+          ticket: f.weighings?.ticket_number ?? null,
+          material: f.material_type,
+          net: Number(f.final_weight || f.net_weight || 0),
+          photo: f.photo_url,
+        });
+      });
+      list.sort((a, b) => +new Date(b.when) - +new Date(a.when));
+      setRows(list);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [clientId]);
+
+  return (
+    <Card><CardContent className="p-4 space-y-2">
+      <h3 className="text-sm font-semibold text-primary">Histórico de Pesagens com Foto</h3>
+      {loading ? (
+        <p className="text-xs text-muted-foreground">Carregando…</p>
+      ) : rows.length === 0 ? (
+        <p className="text-xs text-muted-foreground">Nenhuma foto registrada ainda.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead><tr className="text-left text-muted-foreground border-b">
+              <th className="py-1 pr-2">Data</th>
+              <th className="py-1 pr-2">Ticket Nº</th>
+              <th className="py-1 pr-2">Material</th>
+              <th className="py-1 pr-2 text-right">Peso Líquido</th>
+              <th className="py-1 pr-2">Foto</th>
+            </tr></thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-b last:border-0">
+                  <td className="py-1 pr-2">{new Date(r.when).toLocaleString('pt-BR')}</td>
+                  <td className="py-1 pr-2 font-mono">{r.ticket ? `#${r.ticket}` : '—'}</td>
+                  <td className="py-1 pr-2">{MATERIAL_LABELS[r.material || ''] || r.material || '—'}</td>
+                  <td className="py-1 pr-2 text-right font-mono">{r.net.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg</td>
+                  <td className="py-1 pr-2">
+                    <button type="button" onClick={() => setViewUrl(r.photo)}>
+                      <img src={r.photo} alt="" className="h-12 w-12 object-cover rounded border" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <PhotoViewDialog url={viewUrl} onClose={() => setViewUrl(null)} />
+    </CardContent></Card>
+  );
+}
+
 function PixKeysTab({ clientId, pixKeys, onReload }: { clientId: string; pixKeys: PixKey[]; onReload: () => void }) {
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState({ key_type: 'cpf', key_value: '', bank_name: '', holder_name: '' });

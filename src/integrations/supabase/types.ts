@@ -1502,6 +1502,7 @@ export type Database = {
           operator_id: string
           payment_at: string | null
           payment_status: string
+          photo_url: string | null
           price_per_kg: number | null
           status: string
           tare_weight: number | null
@@ -1523,6 +1524,7 @@ export type Database = {
           operator_id?: string
           payment_at?: string | null
           payment_status?: string
+          photo_url?: string | null
           price_per_kg?: number | null
           status?: string
           tare_weight?: number | null
@@ -1544,6 +1546,7 @@ export type Database = {
           operator_id?: string
           payment_at?: string | null
           payment_status?: string
+          photo_url?: string | null
           price_per_kg?: number | null
           status?: string
           tare_weight?: number | null

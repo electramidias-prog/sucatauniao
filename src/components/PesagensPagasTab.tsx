@@ -17,6 +17,8 @@ import { GenerateInvoiceDialog } from './balanca/GenerateInvoiceDialog';
 import { printReceipt } from './balanca/ThermalReceipt';
 import { ExportButton } from './balanca/exportTable';
 import { logAudit } from './balanca/auditLog';
+import { PhotoField } from './balanca/PhotoField';
+import { PhotoThumb, PhotoViewDialog } from './balanca/PhotoViewDialog';
 
 interface PaidWeighing {
   id: string;
@@ -35,6 +37,7 @@ interface PaidWeighing {
   total_amount: number | null;
   notes: string | null;
   invoice_id: string | null;
+  photo_url: string | null;
   clients?: { name: string; document_number: string } | null;
 }
 
@@ -57,6 +60,7 @@ export function PesagensPagasTab() {
   const [reopenId, setReopenId] = useState<string | null>(null);
   const [payTicket, setPayTicket] = useState<PaidWeighing | null>(null);
   const [exitTicket, setExitTicket] = useState<PaidWeighing | null>(null);
+  const [viewPhotoUrl, setViewPhotoUrl] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase
@@ -112,10 +116,10 @@ export function PesagensPagasTab() {
           <TabsTrigger value="cadastrada">Cadastrada</TabsTrigger>
         </TabsList>
         <TabsContent value="avulsa" className="mt-3">
-          <AvulsaSection items={items} onReload={load} onReopen={setReopenId} onPay={setPayTicket} onExit={setExitTicket} />
+          <AvulsaSection items={items} onReload={load} onReopen={setReopenId} onPay={setPayTicket} onExit={setExitTicket} onViewPhoto={setViewPhotoUrl} />
         </TabsContent>
         <TabsContent value="cadastrada" className="mt-3">
-          <CadastradaSection items={items} onReload={load} onReopen={setReopenId} onPay={setPayTicket} onExit={setExitTicket} />
+          <CadastradaSection items={items} onReload={load} onReopen={setReopenId} onPay={setPayTicket} onExit={setExitTicket} onViewPhoto={setViewPhotoUrl} />
         </TabsContent>
       </Tabs>
 
@@ -129,6 +133,7 @@ export function PesagensPagasTab() {
       )}
       {payTicket && <PayDialog ticket={payTicket} onClose={() => setPayTicket(null)} onDone={load} />}
       {exitTicket && <ExitDialog ticket={exitTicket} onClose={() => setExitTicket(null)} onDone={load} />}
+      <PhotoViewDialog url={viewPhotoUrl} onClose={() => setViewPhotoUrl(null)} />
     </div>
   );
 }
@@ -149,18 +154,20 @@ function Stat({ icon, label, value, positive, danger }: { icon: React.ReactNode;
 
 // ─────────── AVULSA ───────────
 function AvulsaSection({
-  items, onReload, onReopen, onPay, onExit,
+  items, onReload, onReopen, onPay, onExit, onViewPhoto,
 }: {
   items: PaidWeighing[];
   onReload: () => void;
   onReopen: (id: string) => void;
   onPay: (t: PaidWeighing) => void;
   onExit: (t: PaidWeighing) => void;
+  onViewPhoto: (url: string) => void;
 }) {
   const [client, setClient] = useState<SelectedClient | null>(null);
   const [plate, setPlate] = useState('');
   const [gross, setGross] = useState('');
   const [price, setPrice] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
@@ -175,6 +182,7 @@ function AvulsaSection({
       vehicle_plate: plate.toUpperCase(),
       gross_weight: Number(gross),
       price_per_kg: Number(price),
+      photo_url: photoUrl || null,
     };
     const { data, error } = await supabase.from('paid_weighings').insert(payload as any).select('*,clients(name,document_number)').single();
     setBusy(false);
@@ -199,6 +207,7 @@ function AvulsaSection({
     setPlate('');
     setGross('');
     setPrice('');
+    setPhotoUrl(null);
     onReload();
   };
 
@@ -231,10 +240,14 @@ function AvulsaSection({
           <Button onClick={submit} disabled={busy} className="bg-red-600 hover:bg-red-700">
             <Plus className="h-4 w-4 mr-1" /> {busy ? 'Registrando…' : 'Registrar Entrada'}
           </Button>
+          <div>
+            <Label className="text-xs">Foto da carga (opcional)</Label>
+            <PhotoField value={photoUrl} onChange={setPhotoUrl} folder="paid-avulsa" />
+          </div>
         </CardContent>
       </Card>
 
-      <OpenTable title="Tickets Avulsos em Aberto" items={open} onReopen={onReopen} onPay={onPay} onExit={onExit} />
+      <OpenTable title="Tickets Avulsos em Aberto" items={open} onReopen={onReopen} onPay={onPay} onExit={onExit} onViewPhoto={onViewPhoto} />
 
       {autoClosed.length > 0 && (
         <Card>
@@ -272,20 +285,21 @@ function AvulsaSection({
         </Card>
       )}
 
-      <FinalizedTable title="Finalizados do Dia (Avulsa)" items={finalizedToday} />
+      <FinalizedTable title="Finalizados do Dia (Avulsa)" items={finalizedToday} onViewPhoto={onViewPhoto} />
     </div>
   );
 }
 
 // ─────────── CADASTRADA ───────────
 function CadastradaSection({
-  items, onReload, onReopen, onPay, onExit,
+  items, onReload, onReopen, onPay, onExit, onViewPhoto,
 }: {
   items: PaidWeighing[];
   onReload: () => void;
   onReopen: (id: string) => void;
   onPay: (t: PaidWeighing) => void;
   onExit: (t: PaidWeighing) => void;
+  onViewPhoto: (url: string) => void;
 }) {
   const [companies, setCompanies] = useState<{ id: string; name: string; document_number: string }[]>([]);
   const [tareDialog, setTareDialog] = useState<{ id: string; name: string } | null>(null);
@@ -351,8 +365,8 @@ function CadastradaSection({
         </CardContent>
       </Card>
 
-      <OpenTable title="Pesagens Cadastradas em Aberto" items={open} onReopen={onReopen} onPay={onPay} onExit={onExit} />
-      <FinalizedTable title="Finalizadas do Dia (Cadastrada)" items={finalizedToday} />
+      <OpenTable title="Pesagens Cadastradas em Aberto" items={open} onReopen={onReopen} onPay={onPay} onExit={onExit} onViewPhoto={onViewPhoto} />
+      <FinalizedTable title="Finalizadas do Dia (Cadastrada)" items={finalizedToday} onViewPhoto={onViewPhoto} />
 
       {tareDialog && (
         <DefaultTareDialog
@@ -418,6 +432,7 @@ function NewCadastradaDialog({
   const [gross, setGross] = useState('');
   const [tare, setTare] = useState('');
   const [price, setPrice] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -444,6 +459,7 @@ function NewCadastradaDialog({
       gross_weight: Number(gross),
       tare_weight: tare ? Number(tare) : null,
       price_per_kg: Number(price),
+      photo_url: photoUrl || null,
     };
     const { data, error } = await supabase.from('paid_weighings').insert(payload as any).select().single();
     setBusy(false);
@@ -478,6 +494,10 @@ function NewCadastradaDialog({
           <div><Label className="text-xs">Peso Entrada (kg)</Label><Input type="number" step="0.001" value={gross} onChange={e => setGross(e.target.value)} /></div>
           <div><Label className="text-xs">Tara (kg)</Label><Input type="number" step="0.001" value={tare} onChange={e => setTare(e.target.value)} /></div>
           <div><Label className="text-xs">Preço/kg (R$)</Label><Input type="number" step="0.0001" value={price} onChange={e => setPrice(e.target.value)} /></div>
+          <div className="col-span-2">
+            <Label className="text-xs">Foto da carga (opcional)</Label>
+            <PhotoField value={photoUrl} onChange={setPhotoUrl} folder="paid-cadastrada" />
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
@@ -490,13 +510,14 @@ function NewCadastradaDialog({
 
 // ─────────── shared tables ───────────
 function OpenTable({
-  title, items, onReopen, onPay, onExit,
+  title, items, onReopen, onPay, onExit, onViewPhoto,
 }: {
   title: string;
   items: PaidWeighing[];
   onReopen: (id: string) => void;
   onPay: (t: PaidWeighing) => void;
   onExit: (t: PaidWeighing) => void;
+  onViewPhoto: (url: string) => void;
 }) {
   return (
     <Card>
@@ -516,6 +537,7 @@ function OpenTable({
                   <TableHead className="text-xs text-right">Peso</TableHead>
                   <TableHead className="text-xs">Tempo Aberto</TableHead>
                   <TableHead className="text-xs">Pagamento</TableHead>
+                  <TableHead className="text-xs">Foto</TableHead>
                   <TableHead className="text-xs">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -535,6 +557,7 @@ function OpenTable({
                           ? <Badge className="bg-green-600 text-white">Pago</Badge>
                           : <Badge variant="outline" className="border-red-600 text-red-600">Não Pago</Badge>}
                       </TableCell>
+                      <TableCell className="py-1.5"><PhotoThumb url={t.photo_url} onOpen={onViewPhoto} /></TableCell>
                       <TableCell className="py-1.5">
                         <div className="flex gap-1">
                           {t.payment_status === 'nao_pago' && (
@@ -556,8 +579,8 @@ function OpenTable({
   );
 }
 
-function FinalizedTable({ title, items }: { title: string; items: PaidWeighing[] }) {
-  const headers = ['Ticket', 'Cliente', 'Doc', 'Placa', 'Entrada', 'Saída', 'Bruto (kg)', 'Tara (kg)', 'Líquido (kg)', 'Preço/kg', 'Total (R$)', 'Pagamento'];
+function FinalizedTable({ title, items, onViewPhoto }: { title: string; items: PaidWeighing[]; onViewPhoto: (url: string) => void }) {
+  const headers = ['Ticket', 'Cliente', 'Doc', 'Placa', 'Entrada', 'Saída', 'Bruto (kg)', 'Tara (kg)', 'Líquido (kg)', 'Preço/kg', 'Total (R$)', 'Pagamento', 'Foto'];
   const rows = items.map(t => [
     t.id.slice(0, 8),
     t.clients?.name ?? '-',
@@ -571,6 +594,7 @@ function FinalizedTable({ title, items }: { title: string; items: PaidWeighing[]
     Number(t.price_per_kg || 0).toFixed(4),
     Number(t.total_amount || 0).toFixed(2),
     t.payment_status === 'pago' ? 'PAGO' : 'NÃO PAGO',
+    t.photo_url ? t.photo_url : '-',
   ]);
 
   return (
@@ -607,6 +631,7 @@ function FinalizedTable({ title, items }: { title: string; items: PaidWeighing[]
                         ? <Badge className="bg-green-600 text-white">Pago</Badge>
                         : <Badge variant="outline" className="border-red-600 text-red-600">Não Pago</Badge>}
                     </TableCell>
+                    <TableCell className="py-1.5"><PhotoThumb url={t.photo_url} onOpen={onViewPhoto} /></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -659,6 +684,7 @@ function PayDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose:
 
 function ExitDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose: () => void; onDone: () => void }) {
   const [tare, setTare] = useState(String(ticket.tare_weight ?? ''));
+  const [photoUrl, setPhotoUrl] = useState<string | null>(ticket.photo_url ?? null);
   const [busy, setBusy] = useState(false);
   const liquido = (Number(ticket.gross_weight) || 0) - (Number(tare) || 0);
   const total = liquido * (Number(ticket.price_per_kg) || 0);
@@ -668,12 +694,13 @@ function ExitDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose
       return;
     }
     setBusy(true);
-    const updates = {
+    const updates: any = {
       tare_weight: Number(tare),
       total_amount: total,
       exit_at: new Date().toISOString(),
       status: 'finalizado' as const,
     };
+    if (photoUrl !== ticket.photo_url) updates.photo_url = photoUrl || null;
     const { error } = await supabase.from('paid_weighings').update(updates as any).eq('id', ticket.id);
     setBusy(false);
     if (error) {
@@ -712,6 +739,10 @@ function ExitDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose
           </div>
           <div>Líquido: <strong>{fmtKg(liquido)}</strong></div>
           <div>Total: <strong className="text-green-600">{fmtBRL(total)}</strong></div>
+          <div>
+            <Label className="text-xs">Foto da carga (opcional)</Label>
+            <PhotoField value={photoUrl} onChange={setPhotoUrl} folder="paid-exit" recordId={ticket.id} recordTable="paid_weighings" />
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
