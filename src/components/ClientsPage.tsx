@@ -68,6 +68,7 @@ const EMPTY_FORM = {
   address_neighborhood: '', address_city: '', address_state: 'MG', address_zip: '',
   client_type: '', status: 'ativo', operational_status: 'normal',
   notes: '', negotiation_history: '', qr_code_url: '',
+  tarifa_pesagem_customizada: '',
 };
 
 const MATERIAL_LABELS: Record<string, string> = {
@@ -192,6 +193,7 @@ export function ClientsPage() {
       client_type: c.client_type, status: c.status, operational_status: c.operational_status || 'normal',
       notes: c.notes || '', negotiation_history: c.negotiation_history || '',
       qr_code_url: (c as any).qr_code_url || '',
+      tarifa_pesagem_customizada: (c as any).tarifa_pesagem_customizada != null ? String((c as any).tarifa_pesagem_customizada) : '',
     });
     setDialogOpen(true);
   };
