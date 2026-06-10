@@ -34,6 +34,7 @@ const DDSPage = React.lazy(() => import('@/components/DDSPage').then(m => ({ def
 const MaquinasPage = React.lazy(() => import('@/components/MaquinasPage').then(m => ({ default: m.MaquinasPage })));
 const FaturamentoPage = React.lazy(() => import('@/components/FaturamentoPage').then(m => ({ default: m.FaturamentoPage })));
 const ChatPage = React.lazy(() => import('@/components/ChatPage').then(m => ({ default: m.ChatPage })));
+const TransferenciasPage = React.lazy(() => import('@/components/TransferenciasPage').then(m => ({ default: m.TransferenciasPage })));
 const PortalLogin = React.lazy(() => import('@/components/portal/PortalLogin').then(m => ({ default: m.PortalLogin })));
 const PortalDashboard = React.lazy(() => import('@/components/portal/PortalDashboard').then(m => ({ default: m.PortalDashboard })));
 
@@ -73,6 +74,7 @@ function AuthenticatedApp() {
           <Route path="/estoque-fiscal" element={<EstoqueFiscalPage />} />
           <Route path="/clientes" element={<ClientsPage />} />
           <Route path="/conta-corrente" element={<ContaCorrentePage />} />
+          <Route path="/transferencias" element={<TransferenciasPage />} />
           <Route path="/contas-pagar" element={<ContasPagarPage />} />
           <Route path="/faturamento" element={<FaturamentoPage />} />
           <Route path="/documentos" element={<DocumentosPage />} />
