@@ -289,8 +289,8 @@ export function FaturamentoPage() {
     const path = `${saved.id}.pdf`;
     const { error } = await supabase.storage.from('invoices').upload(path, blob, { upsert: true, contentType: 'application/pdf' });
     if (error) { toast.error('Erro upload PDF: ' + error.message); return; }
-    const { data: pub } = supabase.storage.from('invoices').getPublicUrl(path);
-    await supabase.from('invoices' as any).update({ pdf_url: pub.publicUrl }).eq('id', saved.id);
+    const { data: signed } = await supabase.storage.from('invoices').createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+    await supabase.from('invoices' as any).update({ pdf_url: signed?.signedUrl ?? path }).eq('id', saved.id);
     // Download local
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = `fatura-${saved.invoice_number}.pdf`; a.click();

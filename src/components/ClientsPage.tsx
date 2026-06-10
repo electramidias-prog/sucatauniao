@@ -308,8 +308,8 @@ export function ClientsPage() {
                         const path = `qr-codes/${Date.now()}_${file.name}`;
                         const { error } = await supabase.storage.from('invoices').upload(path, file, { upsert: true });
                         if (error) { toast.error('Erro ao enviar QR: ' + error.message); return; }
-                        const { data } = supabase.storage.from('invoices').getPublicUrl(path);
-                        updateField('qr_code_url', data.publicUrl);
+                        const { data: signed } = await supabase.storage.from('invoices').createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+                        updateField('qr_code_url', signed?.signedUrl ?? '');
                         toast.success('QR Code carregado');
                       }}
                     />
