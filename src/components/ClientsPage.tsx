@@ -520,6 +520,7 @@ function ClientProfile({ client, onBack, userId }: { client: Client; onBack: () 
             <h3 className="text-sm font-semibold text-primary">Histórico de Negociações</h3>
             <p className="text-xs text-muted-foreground whitespace-pre-wrap">{c.negotiation_history || 'Nenhum histórico registrado.'}</p>
           </CardContent></Card>
+          <ClientPhotoHistory clientId={c.id} />
         </TabsContent>
 
         {/* ─── TAB: PIX ─── */}
