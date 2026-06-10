@@ -15,6 +15,8 @@ import { ReopenTicketDialog } from './balanca/ReopenTicketDialog';
 import { DefaultTareDialog } from './balanca/DefaultTareDialog';
 import { GenerateInvoiceDialog } from './balanca/GenerateInvoiceDialog';
 import { printReceipt } from './balanca/ThermalReceipt';
+import { baixarTicketPNG, imprimirTicket, montarMensagemWhatsappPaga } from '@/hooks/useTicketImagem';
+import type { TicketDados } from './TicketComprovante';
 import { ExportButton } from './balanca/exportTable';
 import { logAudit } from './balanca/auditLog';
 import { PhotoField } from './balanca/PhotoField';
@@ -40,7 +42,7 @@ interface PaidWeighing {
   notes: string | null;
   invoice_id: string | null;
   photo_url: string | null;
-  clients?: { name: string; document_number: string } | null;
+  clients?: { name: string; document_number: string; phone?: string | null; whatsapp?: string | null } | null;
 }
 
 const fmtKg = (n: number | null | undefined) =>
@@ -67,7 +69,7 @@ export function PesagensPagasTab() {
   const load = useCallback(async () => {
     const { data, error } = await supabase
       .from('paid_weighings')
-      .select('*,clients(name,document_number)')
+      .select('*,clients(name,document_number,phone,whatsapp)')
       .order('entry_at', { ascending: false })
       .limit(500);
     if (error) {
@@ -141,6 +143,58 @@ export function PesagensPagasTab() {
       <PhotoViewDialog url={viewPhotoUrl} onClose={() => setViewPhotoUrl(null)} />
     </div>
   );
+}
+
+// ─────────── PNG / WhatsApp helpers ───────────
+function buildPagaTicketDados(t: PaidWeighing): TicketDados {
+  const tarifa = Number(t.tarifa_aplicada ?? t.total_amount ?? 0);
+  return {
+    tipo: 'paga',
+    numero: t.id.slice(0, 8).toUpperCase(),
+    clienteNome: t.clients?.name || 'Avulsa',
+    clienteDoc: t.clients?.document_number || '',
+    placa: t.vehicle_plate,
+    dataHora: t.exit_at || t.entry_at,
+    fotoUrl: t.photo_url,
+    pesoEntrada: Number(t.gross_weight || 0),
+    pesoSaida: Number(t.tare_weight || 0),
+    pesoLiquido: Number(t.net_weight || 0),
+    tarifa,
+    tarifaOrigem: t.tarifa_origem,
+    pagamento: t.payment_status,
+  };
+}
+
+export async function sendPagaWhatsapp(t: PaidWeighing) {
+  const dados = buildPagaTicketDados(t);
+  try {
+    await baixarTicketPNG(dados, { auditTable: 'paid_weighings', auditRecordId: t.id });
+  } catch (e) {
+    console.error(e);
+    toast.error('Erro ao gerar imagem');
+    return;
+  }
+  const phone = (t.clients?.whatsapp || t.clients?.phone || '').replace(/\D/g, '');
+  const msg = montarMensagemWhatsappPaga({
+    numero: dados.numero,
+    clienteNome: dados.clienteNome,
+    dataHora: dados.dataHora,
+    placa: t.vehicle_plate,
+    pesoLiquido: Number(dados.pesoLiquido || 0),
+    tarifa: Number(dados.tarifa || 0),
+  });
+  if (!phone) {
+    try { await navigator.clipboard.writeText(msg); } catch { /* noop */ }
+    toast.message('Cliente sem telefone', { description: 'Mensagem copiada para a área de transferência.' });
+    return;
+  }
+  window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  await logAudit({
+    table: 'paid_weighings',
+    recordId: t.id,
+    action: 'UPDATE',
+    newValue: { audit_action: 'WHATSAPP_SENT' },
+  });
 }
 
 function Stat({ icon, label, value, positive, danger }: { icon: React.ReactNode; label: string; value: string; positive?: boolean; danger?: boolean }) {
@@ -629,7 +683,10 @@ function FinalizedTable({ title, items, onViewPhoto }: { title: string; items: P
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>{headers.map(h => <TableHead key={h} className="text-xs">{h}</TableHead>)}</TableRow>
+                <TableRow>
+                  {headers.map(h => <TableHead key={h} className="text-xs">{h}</TableHead>)}
+                  <TableHead className="text-xs">Ações</TableHead>
+                </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map(t => (
@@ -652,6 +709,24 @@ function FinalizedTable({ title, items, onViewPhoto }: { title: string; items: P
                         : <Badge variant="outline" className="border-red-600 text-red-600">Não Pago</Badge>}
                     </TableCell>
                     <TableCell className="py-1.5"><PhotoThumb url={t.photo_url} onOpen={onViewPhoto} /></TableCell>
+                    <TableCell className="py-1.5">
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs border-green-600 text-green-700 hover:bg-green-50"
+                          onClick={() => sendPagaWhatsapp(t)}
+                          title="Enviar comprovante no WhatsApp"
+                        >📲 WhatsApp</Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          onClick={() => imprimirTicket(buildPagaTicketDados(t)).catch(() => toast.error('Erro ao imprimir'))}
+                          title="Imprimir cupom"
+                        ><Printer className="h-3 w-3" /></Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -758,22 +833,23 @@ function ExitDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose
     await logAudit({ table: 'paid_weighings', recordId: ticket.id, action: 'UPDATE', oldValue: { status: ticket.status }, newValue: updates });
     await logAudit({ table: 'paid_weighings', recordId: ticket.id, action: 'COBRANCA_GERADA', newValue: { tarifa_aplicada: t.valor, tarifa_origem: t.origem, total_amount: t.valor } });
     toast.success('Saída registrada');
-    printReceipt({
-      ticketId: ticket.id,
-      type: ticket.type,
-      clientName: ticket.clients?.name,
-      clientDocument: ticket.clients?.document_number,
-      vehiclePlate: ticket.vehicle_plate,
-      entryAt: ticket.entry_at,
-      grossWeight: Number(ticket.gross_weight),
-      tareWeight: Number(tare),
-      netWeight: liquido,
-      tarifa: t.valor,
-      tarifaOrigem: t.origem,
-      totalAmount: t.valor,
-      paymentStatus: ticket.payment_status,
-      finalized: true,
-    });
+    const finalizado: PaidWeighing = {
+      ...ticket,
+      tare_weight: Number(tare),
+      net_weight: liquido,
+      total_amount: t.valor,
+      tarifa_aplicada: t.valor,
+      tarifa_origem: t.origem,
+      exit_at: new Date().toISOString(),
+      status: 'finalizado',
+      photo_url: photoUrl ?? ticket.photo_url,
+    };
+    try {
+      await sendPagaWhatsapp(finalizado);
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao enviar WhatsApp');
+    }
     onDone();
     onClose();
   };
