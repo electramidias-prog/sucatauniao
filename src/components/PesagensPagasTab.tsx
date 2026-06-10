@@ -595,7 +595,7 @@ function OpenTable({
 }
 
 function FinalizedTable({ title, items, onViewPhoto }: { title: string; items: PaidWeighing[]; onViewPhoto: (url: string) => void }) {
-  const headers = ['Ticket', 'Cliente', 'Doc', 'Placa', 'Entrada', 'Saída', 'Bruto (kg)', 'Tara (kg)', 'Líquido (kg)', 'Preço/kg', 'Total (R$)', 'Pagamento', 'Foto'];
+  const headers = ['Ticket', 'Cliente', 'Doc', 'Placa', 'Entrada', 'Saída', 'Bruto (kg)', 'Tara (kg)', 'Líquido (kg)', 'Tarifa (R$)', 'Origem', 'Total (R$)', 'Pagamento', 'Foto'];
   const rows = items.map(t => [
     t.id.slice(0, 8),
     t.clients?.name ?? '-',
@@ -606,7 +606,8 @@ function FinalizedTable({ title, items, onViewPhoto }: { title: string; items: P
     Number(t.gross_weight || 0).toFixed(3),
     Number(t.tare_weight || 0).toFixed(3),
     Number(t.net_weight || 0).toFixed(3),
-    Number(t.price_per_kg || 0).toFixed(4),
+    Number(t.tarifa_aplicada || t.total_amount || 0).toFixed(2),
+    t.tarifa_origem === 'customizada' ? 'Personalizada' : t.tarifa_origem === 'global' ? 'Padrão' : '-',
     Number(t.total_amount || 0).toFixed(2),
     t.payment_status === 'pago' ? 'PAGO' : 'NÃO PAGO',
     t.photo_url ? t.photo_url : '-',
@@ -639,7 +640,8 @@ function FinalizedTable({ title, items, onViewPhoto }: { title: string; items: P
                     <TableCell className="text-xs py-1.5 text-right">{fmtKg(t.gross_weight)}</TableCell>
                     <TableCell className="text-xs py-1.5 text-right">{fmtKg(t.tare_weight)}</TableCell>
                     <TableCell className="text-xs py-1.5 text-right font-semibold">{fmtKg(t.net_weight)}</TableCell>
-                    <TableCell className="text-xs py-1.5 text-right">{fmtBRL(t.price_per_kg)}</TableCell>
+                    <TableCell className="text-xs py-1.5 text-right">{fmtBRL(t.tarifa_aplicada ?? t.total_amount)}</TableCell>
+                    <TableCell className="text-xs py-1.5">{t.tarifa_origem === 'customizada' ? <Badge className="bg-green-600 text-white">Personalizada</Badge> : t.tarifa_origem === 'global' ? <Badge variant="outline">Padrão</Badge> : '-'}</TableCell>
                     <TableCell className="text-xs py-1.5 text-right font-semibold">{fmtBRL(t.total_amount)}</TableCell>
                     <TableCell className="py-1.5">
                       {t.payment_status === 'pago'
