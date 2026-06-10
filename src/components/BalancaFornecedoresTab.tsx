@@ -245,6 +245,29 @@ export function BalancaFornecedoresTab() {
     }
   };
 
+  // Paste image (Ctrl+V) while discharge modal is open
+  useEffect(() => {
+    if (!dischargeFor) return;
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const blob = item.getAsFile();
+          if (blob) {
+            e.preventDefault();
+            const ext = (blob.type.split('/')[1] || 'png').split(';')[0];
+            const file = new File([blob], `foto-carga-${Date.now()}.${ext}`, { type: blob.type || 'image/png' });
+            uploadPhoto(file);
+          }
+          break;
+        }
+      }
+    };
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [dischargeFor]);
+
   // ───────── Open Ticket ─────────
   const resetNewTicket = () => {
     setShowNewTicket(false);
