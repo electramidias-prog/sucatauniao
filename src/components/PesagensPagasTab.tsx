@@ -833,22 +833,23 @@ function ExitDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose
     await logAudit({ table: 'paid_weighings', recordId: ticket.id, action: 'UPDATE', oldValue: { status: ticket.status }, newValue: updates });
     await logAudit({ table: 'paid_weighings', recordId: ticket.id, action: 'COBRANCA_GERADA', newValue: { tarifa_aplicada: t.valor, tarifa_origem: t.origem, total_amount: t.valor } });
     toast.success('Saída registrada');
-    printReceipt({
-      ticketId: ticket.id,
-      type: ticket.type,
-      clientName: ticket.clients?.name,
-      clientDocument: ticket.clients?.document_number,
-      vehiclePlate: ticket.vehicle_plate,
-      entryAt: ticket.entry_at,
-      grossWeight: Number(ticket.gross_weight),
-      tareWeight: Number(tare),
-      netWeight: liquido,
-      tarifa: t.valor,
-      tarifaOrigem: t.origem,
-      totalAmount: t.valor,
-      paymentStatus: ticket.payment_status,
-      finalized: true,
-    });
+    const finalizado: PaidWeighing = {
+      ...ticket,
+      tare_weight: Number(tare),
+      net_weight: liquido,
+      total_amount: t.valor,
+      tarifa_aplicada: t.valor,
+      tarifa_origem: t.origem,
+      exit_at: new Date().toISOString(),
+      status: 'finalizado',
+      photo_url: photoUrl ?? ticket.photo_url,
+    };
+    try {
+      await sendPagaWhatsapp(finalizado);
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao enviar WhatsApp');
+    }
     onDone();
     onClose();
   };
