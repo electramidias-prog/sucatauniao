@@ -706,6 +706,24 @@ function FinalizedTable({ title, items, onViewPhoto }: { title: string; items: P
                         : <Badge variant="outline" className="border-red-600 text-red-600">Não Pago</Badge>}
                     </TableCell>
                     <TableCell className="py-1.5"><PhotoThumb url={t.photo_url} onOpen={onViewPhoto} /></TableCell>
+                    <TableCell className="py-1.5">
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs border-green-600 text-green-700 hover:bg-green-50"
+                          onClick={() => sendPagaWhatsapp(t)}
+                          title="Enviar comprovante no WhatsApp"
+                        >📲 WhatsApp</Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          onClick={() => imprimirTicket(buildPagaTicketDados(t)).catch(() => toast.error('Erro ao imprimir'))}
+                          title="Imprimir cupom"
+                        ><Printer className="h-3 w-3" /></Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
