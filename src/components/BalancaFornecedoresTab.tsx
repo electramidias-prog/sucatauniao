@@ -232,49 +232,6 @@ export function BalancaFornecedoresTab() {
     );
   });
 
-  // ───────── Photo upload ─────────
-  const uploadPhoto = async (file: File): Promise<string | null> => {
-    setDForm((p) => ({ ...p, photo_uploading: true }));
-    try {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const path = `discharges/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('weighing-photos').upload(path, file, { contentType: file.type, upsert: true });
-      if (error) throw error;
-      const { data } = supabase.storage.from('weighing-photos').getPublicUrl(path);
-      setDForm((p) => ({ ...p, photo_url: data.publicUrl, photo_uploading: false }));
-      toast.success('Foto enviada');
-      return data.publicUrl;
-    } catch (err) {
-      console.error(err);
-      toast.error('Erro ao enviar foto');
-      setDForm((p) => ({ ...p, photo_uploading: false }));
-      return null;
-    }
-  };
-
-  // Paste image (Ctrl+V) while discharge modal is open
-  useEffect(() => {
-    if (!dischargeFor) return;
-    const handlePaste = (e: ClipboardEvent) => {
-      const items = e.clipboardData?.items;
-      if (!items) return;
-      for (const item of Array.from(items)) {
-        if (item.type.startsWith('image/')) {
-          const blob = item.getAsFile();
-          if (blob) {
-            e.preventDefault();
-            const ext = (blob.type.split('/')[1] || 'png').split(';')[0];
-            const file = new File([blob], `foto-carga-${Date.now()}.${ext}`, { type: blob.type || 'image/png' });
-            uploadPhoto(file);
-          }
-          break;
-        }
-      }
-    };
-    document.addEventListener('paste', handlePaste);
-    return () => document.removeEventListener('paste', handlePaste);
-  }, [dischargeFor]);
-
   // ───────── Open Ticket ─────────
   const resetNewTicket = () => {
     setShowNewTicket(false);
