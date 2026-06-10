@@ -91,25 +91,28 @@ export function PesagensPagasTab() {
   }, [load]);
 
   const today = new Date().toISOString().slice(0, 10);
-  const todayItems = items.filter(i => i.entry_at.slice(0, 10) === today);
+  const closedToday = items.filter(i =>
+    (i.status === 'finalizado' || i.status === 'encerrado_automatico') &&
+    (i.exit_at || i.entry_at).slice(0, 10) === today,
+  );
   const cash = {
-    total: todayItems.length,
-    paid: todayItems.filter(i => i.payment_status === 'pago').length,
-    paidValue: todayItems
+    cycles: closedToday.length,
+    billed: closedToday.reduce((a, i) => a + Number(i.total_amount || 0), 0),
+    received: closedToday
       .filter(i => i.payment_status === 'pago')
       .reduce((a, i) => a + Number(i.total_amount || 0), 0),
-    pending: todayItems
-      .filter(i => i.payment_status === 'nao_pago' && (i.status === 'finalizado' || i.status === 'encerrado_automatico'))
+    pending: closedToday
+      .filter(i => i.payment_status === 'nao_pago')
       .reduce((a, i) => a + Number(i.total_amount || 0), 0),
   };
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat icon={<Scale className="h-4 w-4" />} label="Pesagens Hoje" value={String(cash.total)} />
-        <Stat icon={<FileText className="h-4 w-4" />} label="Quitadas" value={String(cash.paid)} />
-        <Stat icon={<DollarSign className="h-4 w-4" />} label="Total Quitado" value={fmtBRL(cash.paidValue)} positive />
-        <Stat icon={<DollarSign className="h-4 w-4" />} label="Inadimplente" value={fmtBRL(cash.pending)} danger />
+        <Stat icon={<Scale className="h-4 w-4" />} label="Ciclos Hoje" value={String(cash.cycles)} />
+        <Stat icon={<FileText className="h-4 w-4" />} label="Total Cobrado" value={fmtBRL(cash.billed)} />
+        <Stat icon={<DollarSign className="h-4 w-4" />} label="Total Recebido" value={fmtBRL(cash.received)} positive />
+        <Stat icon={<DollarSign className="h-4 w-4" />} label="Pendente" value={fmtBRL(cash.pending)} danger />
       </div>
 
       <Tabs defaultValue="avulsa">
