@@ -13,6 +13,7 @@ export interface MenuItemConfig {
 }
 
 const ALL_ROLES: UserRole[] = ['admin', 'financeiro', 'operador_balanca', 'conferente', 'contador'];
+const ADMIN_ONLY: UserRole[] = ['admin'];
 
 export const menuSections: MenuSection[] = [
   {
@@ -26,30 +27,30 @@ export const menuSections: MenuSection[] = [
   {
     title: 'Operação',
     items: [
-      { label: 'Balança / Pesagem', iconName: 'Scale', path: '/balanca', roles: ['admin', 'operador_balanca'] },
-      { label: 'Estoque Físico', iconName: 'Warehouse', path: '/estoque-fisico', roles: ['admin', 'conferente', 'operador_balanca'] },
-      { label: 'Estoque Fiscal', iconName: 'FileText', path: '/estoque-fiscal', roles: ['admin', 'contador', 'financeiro'] },
-      { label: 'Central NF-e / MTR', iconName: 'FileSpreadsheet', path: '/central-emissao', roles: ['admin', 'financeiro'] },
-      { label: 'Calculadora MTR', iconName: 'Calculator', path: '/calculadora-mtr', roles: ['admin', 'financeiro', 'contador'] },
+      { label: 'Balança / Pesagem', iconName: 'Scale', path: '/balanca', roles: ALL_ROLES },
+      { label: 'Estoque Físico', iconName: 'Warehouse', path: '/estoque-fisico', roles: ALL_ROLES },
+      { label: 'Estoque Fiscal', iconName: 'FileText', path: '/estoque-fiscal', roles: ALL_ROLES },
+      { label: 'Central NF-e / MTR', iconName: 'FileSpreadsheet', path: '/central-emissao', roles: ALL_ROLES },
+      { label: 'Calculadora MTR', iconName: 'Calculator', path: '/calculadora-mtr', roles: ALL_ROLES },
     ],
   },
   {
     title: 'Clientes & Financeiro',
     items: [
-      { label: 'Clientes', iconName: 'Users', path: '/clientes', roles: ['admin', 'financeiro', 'operador_balanca'] },
-      { label: 'Conta Corrente', iconName: 'Wallet', path: '/conta-corrente', roles: ['admin', 'financeiro'] },
-      { label: 'Contas a Pagar', iconName: 'Wallet', path: '/contas-pagar', roles: ['admin', 'financeiro'] },
-      { label: 'Faturamento', iconName: 'FileText', path: '/faturamento', roles: ['admin', 'financeiro'] },
+      { label: 'Clientes', iconName: 'Users', path: '/clientes', roles: ALL_ROLES },
+      { label: 'Conta Corrente', iconName: 'Wallet', path: '/conta-corrente', roles: ALL_ROLES },
+      { label: 'Contas a Pagar', iconName: 'Wallet', path: '/contas-pagar', roles: ALL_ROLES },
+      { label: 'Faturamento', iconName: 'FileText', path: '/faturamento', roles: ALL_ROLES },
     ],
   },
   {
     title: 'Compliance & RH',
     items: [
-      { label: 'Documentos da Empresa', iconName: 'FileText', path: '/documentos', roles: ['admin', 'financeiro'] },
-      { label: 'Funcionários e NRs', iconName: 'Users', path: '/funcionarios', roles: ['admin', 'financeiro'] },
-      { label: 'EPIs', iconName: 'Shield', path: '/epis', roles: ['admin', 'financeiro', 'conferente'] },
-      { label: 'Máquinas e Laudos', iconName: 'Settings', path: '/maquinas', roles: ['admin', 'financeiro', 'conferente'] },
-      { label: 'DDS', iconName: 'ScrollText', path: '/dds', roles: ['admin', 'financeiro', 'conferente', 'operador_balanca'] },
+      { label: 'Documentos da Empresa', iconName: 'FileText', path: '/documentos', roles: ALL_ROLES },
+      { label: 'Funcionários e NRs', iconName: 'Users', path: '/funcionarios', roles: ALL_ROLES },
+      { label: 'EPIs', iconName: 'Shield', path: '/epis', roles: ALL_ROLES },
+      { label: 'Máquinas e Laudos', iconName: 'Settings', path: '/maquinas', roles: ALL_ROLES },
+      { label: 'DDS', iconName: 'ScrollText', path: '/dds', roles: ALL_ROLES },
     ],
   },
   {
@@ -61,9 +62,9 @@ export const menuSections: MenuSection[] = [
   {
     title: 'Administração',
     items: [
-      { label: 'Usuários', iconName: 'Shield', path: '/usuarios', roles: ['admin'] },
-      { label: 'Auditoria', iconName: 'ScrollText', path: '/auditoria', roles: ['admin'] },
-      { label: 'Configurações', iconName: 'Settings', path: '/configuracoes', roles: ['admin'] },
+      { label: 'Usuários', iconName: 'Shield', path: '/usuarios', roles: ADMIN_ONLY },
+      { label: 'Auditoria', iconName: 'ScrollText', path: '/auditoria', roles: ADMIN_ONLY },
+      { label: 'Configurações', iconName: 'Settings', path: '/configuracoes', roles: ADMIN_ONLY },
     ],
   },
 ];
