@@ -21,6 +21,7 @@ import { ImportMappingDialog } from '@/components/ImportMappingDialog';
 import { ClientPortalAccessDialog } from '@/components/ClientPortalAccessDialog';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { RefreshButton } from '@/components/RefreshButton';
+import { PhotoViewDialog } from '@/components/balanca/PhotoViewDialog';
 
 // ─── Types ───
 interface Client {
@@ -45,7 +46,7 @@ interface Weighing {
   id: string; client_id: string; ticket_number: number; vehicle_plate: string | null;
   material_type: string; gross_weight: number; tare_weight: number; net_weight: number;
   price_per_kg: number; total_value: number; status: string; settlement_id: string | null;
-  created_at: string;
+  created_at: string; photo_url?: string | null;
 }
 
 interface Transaction {
