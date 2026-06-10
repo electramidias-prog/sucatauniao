@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +10,42 @@ import { Badge } from '@/components/ui/badge';
 import { Settings, Building2, Scale, Printer, Globe, Bell } from 'lucide-react';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { RefreshButton } from '@/components/RefreshButton';
+import { getTarifaPesagem, setTarifaGlobal } from '@/lib/tarifaPesagem';
+import { logAudit } from '@/components/balanca/auditLog';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 export function ConfiguracoesPage() {
+  const { user } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [tarifaGlobal, setTarifaGlobalState] = useState('');
+  const [savingTarifa, setSavingTarifa] = useState(false);
+
+  useEffect(() => {
+    getTarifaPesagem(null).then(t => setTarifaGlobalState(String(t.valor)));
+    (async () => {
+      if (!user) return;
+      const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+      setIsAdmin(((data as any[]) || []).some(r => r.role === 'admin'));
+    })();
+  }, [user]);
+
+  const saveTarifa = async () => {
+    const v = Number(String(tarifaGlobal).replace(',', '.'));
+    if (!Number.isFinite(v) || v < 0) { toast.error('Valor inválido'); return; }
+    setSavingTarifa(true);
+    try {
+      const before = (await getTarifaPesagem(null)).valor;
+      await setTarifaGlobal(v);
+      await logAudit({ table: 'system_settings', recordId: 'tarifa_pesagem_paga', action: 'UPDATE', oldValue: { value: before }, newValue: { value: v } });
+      toast.success('Tarifa padrão atualizada');
+    } catch (e: any) {
+      toast.error('Erro: ' + (e?.message || ''));
+    } finally {
+      setSavingTarifa(false);
+    }
+  };
+
   const [empresa, setEmpresa] = useState({
     razao_social: 'Sucata União LTDA',
     cnpj: '',
@@ -98,6 +132,30 @@ export function ConfiguracoesPage() {
             <div className="flex items-center gap-2 mt-3">
               <Printer className="h-4 w-4 text-muted-foreground" />
               <Label className="text-xs">Impressora Térmica: {balanca.printer_width}</Label>
+            </div>
+
+            <div className="border-t pt-3 mt-3">
+              <h4 className="text-sm font-semibold mb-2">Pesagem Paga</h4>
+              <div className="grid grid-cols-2 gap-3 items-end">
+                <div>
+                  <Label className="text-xs">Tarifa padrão de pesagem paga (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={tarifaGlobal}
+                    onChange={e => setTarifaGlobalState(e.target.value)}
+                    disabled={!isAdmin}
+                    className="h-8 text-xs"
+                  />
+                  {!isAdmin && <p className="text-[10px] text-muted-foreground mt-1">Apenas administradores podem alterar.</p>}
+                </div>
+                <div>
+                  <Button size="sm" disabled={!isAdmin || savingTarifa} onClick={saveTarifa}>
+                    {savingTarifa ? 'Salvando…' : 'Salvar Tarifa'}
+                  </Button>
+                </div>
+              </div>
             </div>
           </CardContent></Card>
         </TabsContent>

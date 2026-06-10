@@ -540,6 +540,7 @@ export type Database = {
           state_registration: string | null
           status: string
           tags: string[] | null
+          tarifa_pesagem_customizada: number | null
           trade_name: string | null
           updated_at: string
           vehicle_plate: string | null
@@ -581,6 +582,7 @@ export type Database = {
           state_registration?: string | null
           status?: string
           tags?: string[] | null
+          tarifa_pesagem_customizada?: number | null
           trade_name?: string | null
           updated_at?: string
           vehicle_plate?: string | null
@@ -622,6 +624,7 @@ export type Database = {
           state_registration?: string | null
           status?: string
           tags?: string[] | null
+          tarifa_pesagem_customizada?: number | null
           trade_name?: string | null
           updated_at?: string
           vehicle_plate?: string | null
@@ -1506,6 +1509,8 @@ export type Database = {
           price_per_kg: number | null
           status: string
           tare_weight: number | null
+          tarifa_aplicada: number | null
+          tarifa_origem: string | null
           total_amount: number | null
           type: string
           updated_at: string
@@ -1528,6 +1533,8 @@ export type Database = {
           price_per_kg?: number | null
           status?: string
           tare_weight?: number | null
+          tarifa_aplicada?: number | null
+          tarifa_origem?: string | null
           total_amount?: number | null
           type: string
           updated_at?: string
@@ -1550,6 +1557,8 @@ export type Database = {
           price_per_kg?: number | null
           status?: string
           tare_weight?: number | null
+          tarifa_aplicada?: number | null
+          tarifa_origem?: string | null
           total_amount?: number | null
           type?: string
           updated_at?: string
@@ -2148,6 +2157,13 @@ export type Database = {
       can_access_chat_channel: {
         Args: { _channel: string; _user_id: string }
         Returns: boolean
+      }
+      get_tarifa_pesagem: {
+        Args: { _client_id: string }
+        Returns: {
+          origem: string
+          valor: number
+        }[]
       }
       get_user_role: {
         Args: { _user_id: string }

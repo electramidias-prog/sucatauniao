@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 export async function logAudit(opts: {
   table: string;
   recordId: string;
-  action: 'INSERT' | 'UPDATE' | 'DELETE';
+  action: 'INSERT' | 'UPDATE' | 'DELETE' | 'COBRANCA_GERADA' | 'WHATSAPP_SENT';
   oldValue?: unknown;
   newValue?: unknown;
 }) {

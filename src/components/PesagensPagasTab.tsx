@@ -19,6 +19,7 @@ import { ExportButton } from './balanca/exportTable';
 import { logAudit } from './balanca/auditLog';
 import { PhotoField } from './balanca/PhotoField';
 import { PhotoThumb, PhotoViewDialog } from './balanca/PhotoViewDialog';
+import { getTarifaPesagem, type TarifaPesagem } from '@/lib/tarifaPesagem';
 
 interface PaidWeighing {
   id: string;
@@ -33,8 +34,9 @@ interface PaidWeighing {
   status: 'em_aberto' | 'finalizado' | 'encerrado_automatico' | 'reaberto';
   payment_status: 'pago' | 'nao_pago';
   payment_at: string | null;
-  price_per_kg: number | null;
   total_amount: number | null;
+  tarifa_aplicada: number | null;
+  tarifa_origem: 'global' | 'customizada' | null;
   notes: string | null;
   invoice_id: string | null;
   photo_url: string | null;
@@ -89,25 +91,28 @@ export function PesagensPagasTab() {
   }, [load]);
 
   const today = new Date().toISOString().slice(0, 10);
-  const todayItems = items.filter(i => i.entry_at.slice(0, 10) === today);
+  const closedToday = items.filter(i =>
+    (i.status === 'finalizado' || i.status === 'encerrado_automatico') &&
+    (i.exit_at || i.entry_at).slice(0, 10) === today,
+  );
   const cash = {
-    total: todayItems.length,
-    paid: todayItems.filter(i => i.payment_status === 'pago').length,
-    paidValue: todayItems
+    cycles: closedToday.length,
+    billed: closedToday.reduce((a, i) => a + Number(i.total_amount || 0), 0),
+    received: closedToday
       .filter(i => i.payment_status === 'pago')
       .reduce((a, i) => a + Number(i.total_amount || 0), 0),
-    pending: todayItems
-      .filter(i => i.payment_status === 'nao_pago' && (i.status === 'finalizado' || i.status === 'encerrado_automatico'))
+    pending: closedToday
+      .filter(i => i.payment_status === 'nao_pago')
       .reduce((a, i) => a + Number(i.total_amount || 0), 0),
   };
 
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat icon={<Scale className="h-4 w-4" />} label="Pesagens Hoje" value={String(cash.total)} />
-        <Stat icon={<FileText className="h-4 w-4" />} label="Quitadas" value={String(cash.paid)} />
-        <Stat icon={<DollarSign className="h-4 w-4" />} label="Total Quitado" value={fmtBRL(cash.paidValue)} positive />
-        <Stat icon={<DollarSign className="h-4 w-4" />} label="Inadimplente" value={fmtBRL(cash.pending)} danger />
+        <Stat icon={<Scale className="h-4 w-4" />} label="Ciclos Hoje" value={String(cash.cycles)} />
+        <Stat icon={<FileText className="h-4 w-4" />} label="Total Cobrado" value={fmtBRL(cash.billed)} />
+        <Stat icon={<DollarSign className="h-4 w-4" />} label="Total Recebido" value={fmtBRL(cash.received)} positive />
+        <Stat icon={<DollarSign className="h-4 w-4" />} label="Pendente" value={fmtBRL(cash.pending)} danger />
       </div>
 
       <Tabs defaultValue="avulsa">
@@ -166,22 +171,29 @@ function AvulsaSection({
   const [client, setClient] = useState<SelectedClient | null>(null);
   const [plate, setPlate] = useState('');
   const [gross, setGross] = useState('');
-  const [price, setPrice] = useState('');
+  const [tarifa, setTarifa] = useState<TarifaPesagem | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!client) { setTarifa(null); return; }
+    getTarifaPesagem(client.id).then(t => { if (!cancelled) setTarifa(t); });
+    return () => { cancelled = true; };
+  }, [client]);
+
   const submit = async () => {
-    if (!client || !plate || !gross || !price) {
-      toast.error('Preencha cliente, placa, peso e preço');
+    if (!client || !plate || !gross) {
+      toast.error('Preencha cliente, placa e peso de entrada');
       return;
     }
     setBusy(true);
+    const t = tarifa ?? await getTarifaPesagem(client.id);
     const payload = {
       type: 'avulsa' as const,
       client_id: client.id,
       vehicle_plate: plate.toUpperCase(),
       gross_weight: Number(gross),
-      price_per_kg: Number(price),
       photo_url: photoUrl || null,
     };
     const { data, error } = await supabase.from('paid_weighings').insert(payload as any).select('*,clients(name,document_number)').single();
@@ -190,7 +202,7 @@ function AvulsaSection({
       toast.error('Erro: ' + (error?.message || ''));
       return;
     }
-    await logAudit({ table: 'paid_weighings', recordId: (data as any).id, action: 'INSERT', newValue: payload });
+    await logAudit({ table: 'paid_weighings', recordId: (data as any).id, action: 'INSERT', newValue: { ...payload, tarifa_prevista: t.valor, tarifa_origem: t.origem } });
     toast.success('Entrada registrada');
     printReceipt({
       ticketId: (data as any).id,
@@ -200,13 +212,14 @@ function AvulsaSection({
       vehiclePlate: plate.toUpperCase(),
       entryAt: (data as any).entry_at,
       grossWeight: Number(gross),
-      pricePerKg: Number(price),
+      tarifa: t.valor,
+      tarifaOrigem: t.origem,
       paymentStatus: 'nao_pago',
     });
     setClient(null);
     setPlate('');
     setGross('');
-    setPrice('');
+    setTarifa(null);
     setPhotoUrl(null);
     onReload();
   };
@@ -232,9 +245,9 @@ function AvulsaSection({
               <Label className="text-xs">Peso Entrada (kg)</Label>
               <Input type="number" step="0.001" value={gross} onChange={e => setGross(e.target.value)} />
             </div>
-            <div>
-              <Label className="text-xs">Preço/kg (R$)</Label>
-              <Input type="number" step="0.0001" value={price} onChange={e => setPrice(e.target.value)} />
+            <div className="flex flex-col justify-end">
+              <Label className="text-xs">Tarifa do ciclo</Label>
+              <TarifaBadge tarifa={tarifa} />
             </div>
           </div>
           <Button onClick={submit} disabled={busy} className="bg-red-600 hover:bg-red-700">
@@ -431,7 +444,7 @@ function NewCadastradaDialog({
   const [plate, setPlate] = useState('');
   const [gross, setGross] = useState('');
   const [tare, setTare] = useState('');
-  const [price, setPrice] = useState('');
+  const [tarifa, setTarifa] = useState<TarifaPesagem | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -444,21 +457,22 @@ function NewCadastradaDialog({
         .maybeSingle();
       if (data) setTare(String((data as any).tare_weight ?? ''));
     })();
+    getTarifaPesagem(client.id).then(setTarifa);
   }, [client.id]);
 
   const submit = async () => {
-    if (!plate || !gross || !price) {
-      toast.error('Preencha placa, peso e preço');
+    if (!plate || !gross) {
+      toast.error('Preencha placa e peso');
       return;
     }
     setBusy(true);
+    const t = tarifa ?? await getTarifaPesagem(client.id);
     const payload = {
       type: 'cadastrada' as const,
       client_id: client.id,
       vehicle_plate: plate.toUpperCase(),
       gross_weight: Number(gross),
       tare_weight: tare ? Number(tare) : null,
-      price_per_kg: Number(price),
       photo_url: photoUrl || null,
     };
     const { data, error } = await supabase.from('paid_weighings').insert(payload as any).select().single();
@@ -467,7 +481,7 @@ function NewCadastradaDialog({
       toast.error(error?.message || 'Erro');
       return;
     }
-    await logAudit({ table: 'paid_weighings', recordId: (data as any).id, action: 'INSERT', newValue: payload });
+    await logAudit({ table: 'paid_weighings', recordId: (data as any).id, action: 'INSERT', newValue: { ...payload, tarifa_prevista: t.valor, tarifa_origem: t.origem } });
     toast.success('Entrada registrada');
     printReceipt({
       ticketId: (data as any).id,
@@ -478,7 +492,8 @@ function NewCadastradaDialog({
       entryAt: (data as any).entry_at,
       grossWeight: Number(gross),
       tareWeight: tare ? Number(tare) : null,
-      pricePerKg: Number(price),
+      tarifa: t.valor,
+      tarifaOrigem: t.origem,
       paymentStatus: 'nao_pago',
     });
     onDone();
@@ -493,7 +508,10 @@ function NewCadastradaDialog({
           <div className="col-span-2"><Label className="text-xs">Placa</Label><Input value={plate} onChange={e => setPlate(e.target.value.toUpperCase())} /></div>
           <div><Label className="text-xs">Peso Entrada (kg)</Label><Input type="number" step="0.001" value={gross} onChange={e => setGross(e.target.value)} /></div>
           <div><Label className="text-xs">Tara (kg)</Label><Input type="number" step="0.001" value={tare} onChange={e => setTare(e.target.value)} /></div>
-          <div><Label className="text-xs">Preço/kg (R$)</Label><Input type="number" step="0.0001" value={price} onChange={e => setPrice(e.target.value)} /></div>
+          <div className="col-span-2">
+            <Label className="text-xs">Tarifa do ciclo</Label>
+            <TarifaBadge tarifa={tarifa} />
+          </div>
           <div className="col-span-2">
             <Label className="text-xs">Foto da carga (opcional)</Label>
             <PhotoField value={photoUrl} onChange={setPhotoUrl} folder="paid-cadastrada" />
@@ -580,7 +598,7 @@ function OpenTable({
 }
 
 function FinalizedTable({ title, items, onViewPhoto }: { title: string; items: PaidWeighing[]; onViewPhoto: (url: string) => void }) {
-  const headers = ['Ticket', 'Cliente', 'Doc', 'Placa', 'Entrada', 'Saída', 'Bruto (kg)', 'Tara (kg)', 'Líquido (kg)', 'Preço/kg', 'Total (R$)', 'Pagamento', 'Foto'];
+  const headers = ['Ticket', 'Cliente', 'Doc', 'Placa', 'Entrada', 'Saída', 'Bruto (kg)', 'Tara (kg)', 'Líquido (kg)', 'Tarifa (R$)', 'Origem', 'Total (R$)', 'Pagamento', 'Foto'];
   const rows = items.map(t => [
     t.id.slice(0, 8),
     t.clients?.name ?? '-',
@@ -591,7 +609,8 @@ function FinalizedTable({ title, items, onViewPhoto }: { title: string; items: P
     Number(t.gross_weight || 0).toFixed(3),
     Number(t.tare_weight || 0).toFixed(3),
     Number(t.net_weight || 0).toFixed(3),
-    Number(t.price_per_kg || 0).toFixed(4),
+    Number(t.tarifa_aplicada || t.total_amount || 0).toFixed(2),
+    t.tarifa_origem === 'customizada' ? 'Personalizada' : t.tarifa_origem === 'global' ? 'Padrão' : '-',
     Number(t.total_amount || 0).toFixed(2),
     t.payment_status === 'pago' ? 'PAGO' : 'NÃO PAGO',
     t.photo_url ? t.photo_url : '-',
@@ -624,7 +643,8 @@ function FinalizedTable({ title, items, onViewPhoto }: { title: string; items: P
                     <TableCell className="text-xs py-1.5 text-right">{fmtKg(t.gross_weight)}</TableCell>
                     <TableCell className="text-xs py-1.5 text-right">{fmtKg(t.tare_weight)}</TableCell>
                     <TableCell className="text-xs py-1.5 text-right font-semibold">{fmtKg(t.net_weight)}</TableCell>
-                    <TableCell className="text-xs py-1.5 text-right">{fmtBRL(t.price_per_kg)}</TableCell>
+                    <TableCell className="text-xs py-1.5 text-right">{fmtBRL(t.tarifa_aplicada ?? t.total_amount)}</TableCell>
+                    <TableCell className="text-xs py-1.5">{t.tarifa_origem === 'customizada' ? <Badge className="bg-green-600 text-white">Personalizada</Badge> : t.tarifa_origem === 'global' ? <Badge variant="outline">Padrão</Badge> : '-'}</TableCell>
                     <TableCell className="text-xs py-1.5 text-right font-semibold">{fmtBRL(t.total_amount)}</TableCell>
                     <TableCell className="py-1.5">
                       {t.payment_status === 'pago'
@@ -644,14 +664,34 @@ function FinalizedTable({ title, items, onViewPhoto }: { title: string; items: P
 }
 
 // ─────────── action dialogs ───────────
+function TarifaBadge({ tarifa }: { tarifa: TarifaPesagem | null }) {
+  if (!tarifa) {
+    return <div className="h-8 flex items-center text-xs text-muted-foreground">Selecione o cliente…</div>;
+  }
+  return (
+    <div className="h-8 flex items-center gap-2">
+      <span className="text-sm font-bold">{tarifa.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+      {tarifa.origem === 'customizada'
+        ? <Badge className="bg-green-600 text-white text-[10px]">Tarifa personalizada</Badge>
+        : <Badge variant="outline" className="text-[10px]">Tarifa padrão</Badge>}
+    </div>
+  );
+}
+
 function PayDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose: () => void; onDone: () => void }) {
   const [busy, setBusy] = useState(false);
-  const liquido = (Number(ticket.gross_weight) || 0) - (Number(ticket.tare_weight) || 0);
-  const total = liquido * (Number(ticket.price_per_kg) || 0);
+  const [tarifa, setTarifa] = useState<TarifaPesagem | null>(null);
+  useEffect(() => { getTarifaPesagem(ticket.client_id).then(setTarifa); }, [ticket.client_id]);
+  const total = Number(ticket.total_amount) || tarifa?.valor || 0;
   const submit = async () => {
     setBusy(true);
+    const t = tarifa ?? await getTarifaPesagem(ticket.client_id);
     const updates: any = { payment_status: 'pago', payment_at: new Date().toISOString() };
-    if (!ticket.total_amount) updates.total_amount = total;
+    if (!ticket.total_amount) {
+      updates.total_amount = t.valor;
+      updates.tarifa_aplicada = t.valor;
+      updates.tarifa_origem = t.origem;
+    }
     const { error } = await supabase.from('paid_weighings').update(updates).eq('id', ticket.id);
     setBusy(false);
     if (error) {
@@ -671,7 +711,10 @@ function PayDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose:
           <div>Cliente: <strong>{ticket.clients?.name ?? '-'}</strong></div>
           <div>Placa: <strong>{ticket.vehicle_plate}</strong></div>
           <div>Peso: {fmtKg(ticket.gross_weight)}</div>
-          <div className="text-lg pt-2">Valor: <span className="font-bold text-green-600">{fmtBRL(ticket.total_amount || total)}</span></div>
+          <div className="text-lg pt-2">Valor: <span className="font-bold text-green-600">{fmtBRL(total)}</span></div>
+          {tarifa && !ticket.total_amount && (
+            <div className="text-xs text-muted-foreground">Tarifa {tarifa.origem === 'customizada' ? 'personalizada' : 'padrão'}</div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
@@ -686,17 +729,22 @@ function ExitDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose
   const [tare, setTare] = useState(String(ticket.tare_weight ?? ''));
   const [photoUrl, setPhotoUrl] = useState<string | null>(ticket.photo_url ?? null);
   const [busy, setBusy] = useState(false);
+  const [tarifa, setTarifa] = useState<TarifaPesagem | null>(null);
+  useEffect(() => { getTarifaPesagem(ticket.client_id).then(setTarifa); }, [ticket.client_id]);
   const liquido = (Number(ticket.gross_weight) || 0) - (Number(tare) || 0);
-  const total = liquido * (Number(ticket.price_per_kg) || 0);
+  const total = tarifa?.valor ?? Number(ticket.total_amount) ?? 0;
   const submit = async () => {
     if (!tare) {
       toast.error('Informe a tara');
       return;
     }
     setBusy(true);
+    const t = tarifa ?? await getTarifaPesagem(ticket.client_id);
     const updates: any = {
       tare_weight: Number(tare),
-      total_amount: total,
+      total_amount: t.valor,
+      tarifa_aplicada: t.valor,
+      tarifa_origem: t.origem,
       exit_at: new Date().toISOString(),
       status: 'finalizado' as const,
     };
@@ -708,6 +756,7 @@ function ExitDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose
       return;
     }
     await logAudit({ table: 'paid_weighings', recordId: ticket.id, action: 'UPDATE', oldValue: { status: ticket.status }, newValue: updates });
+    await logAudit({ table: 'paid_weighings', recordId: ticket.id, action: 'COBRANCA_GERADA', newValue: { tarifa_aplicada: t.valor, tarifa_origem: t.origem, total_amount: t.valor } });
     toast.success('Saída registrada');
     printReceipt({
       ticketId: ticket.id,
@@ -719,8 +768,9 @@ function ExitDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose
       grossWeight: Number(ticket.gross_weight),
       tareWeight: Number(tare),
       netWeight: liquido,
-      pricePerKg: Number(ticket.price_per_kg),
-      totalAmount: total,
+      tarifa: t.valor,
+      tarifaOrigem: t.origem,
+      totalAmount: t.valor,
       paymentStatus: ticket.payment_status,
       finalized: true,
     });
@@ -730,15 +780,20 @@ function ExitDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
-        <DialogHeader><DialogTitle>Registrar Saída</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>Registrar Saída e Cobrança</DialogTitle></DialogHeader>
         <div className="space-y-2 text-sm">
-          <div>Peso Entrada: <strong>{fmtKg(ticket.gross_weight)}</strong></div>
+          <div>Peso de entrada: <strong>{fmtKg(ticket.gross_weight)}</strong></div>
           <div>
-            <Label className="text-xs">Tara (kg) *</Label>
+            <Label className="text-xs">Peso de saída / Tara (kg) *</Label>
             <Input type="number" step="0.001" value={tare} onChange={e => setTare(e.target.value)} />
           </div>
-          <div>Líquido: <strong>{fmtKg(liquido)}</strong></div>
-          <div>Total: <strong className="text-green-600">{fmtBRL(total)}</strong></div>
+          <div>Peso líquido: <strong>{fmtKg(liquido)}</strong></div>
+          <div className="pt-1 border-t">
+            <div className="flex items-center justify-between">
+              <span>Tarifa do ciclo:</span>
+              <TarifaBadge tarifa={tarifa} />
+            </div>
+          </div>
           <div>
             <Label className="text-xs">Foto da carga (opcional)</Label>
             <PhotoField value={photoUrl} onChange={setPhotoUrl} folder="paid-exit" recordId={ticket.id} recordTable="paid_weighings" />
@@ -746,7 +801,7 @@ function ExitDialog({ ticket, onClose, onDone }: { ticket: PaidWeighing; onClose
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={submit} disabled={busy} className="bg-red-600 hover:bg-red-700"><Printer className="h-4 w-4 mr-1" />{busy ? 'Salvando…' : 'Finalizar e Imprimir'}</Button>
+          <Button onClick={submit} disabled={busy || !tarifa} className="bg-red-600 hover:bg-red-700"><Printer className="h-4 w-4 mr-1" />{busy ? 'Salvando…' : `Confirmar Saída e Cobrar ${fmtBRL(total)}`}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

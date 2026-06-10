@@ -68,6 +68,7 @@ const EMPTY_FORM = {
   address_neighborhood: '', address_city: '', address_state: 'MG', address_zip: '',
   client_type: '', status: 'ativo', operational_status: 'normal',
   notes: '', negotiation_history: '', qr_code_url: '',
+  tarifa_pesagem_customizada: '',
 };
 
 const MATERIAL_LABELS: Record<string, string> = {
@@ -160,6 +161,11 @@ export function ClientsPage() {
     const payload: Record<string, unknown> = { ...form, created_by: user?.id };
     // treat empty client_type as 'nao_informado' before nullifying empty strings
     if (!payload.client_type) payload.client_type = 'nao_informado';
+    // numeric tarifa
+    if (typeof payload.tarifa_pesagem_customizada === 'string') {
+      const s = (payload.tarifa_pesagem_customizada as string).trim();
+      payload.tarifa_pesagem_customizada = s === '' ? null : Number(s.replace(',', '.'));
+    }
     // remove empty strings
     Object.keys(payload).forEach(k => { if (payload[k] === '') payload[k] = null; });
     payload.name = form.name;
@@ -192,6 +198,7 @@ export function ClientsPage() {
       client_type: c.client_type, status: c.status, operational_status: c.operational_status || 'normal',
       notes: c.notes || '', negotiation_history: c.negotiation_history || '',
       qr_code_url: (c as any).qr_code_url || '',
+      tarifa_pesagem_customizada: (c as any).tarifa_pesagem_customizada != null ? String((c as any).tarifa_pesagem_customizada) : '',
     });
     setDialogOpen(true);
   };
@@ -289,6 +296,18 @@ export function ClientsPage() {
                 <div><Label className="text-xs">Cidade</Label><Input value={form.address_city} onChange={e => updateField('address_city', e.target.value)} className="h-8 text-xs" /></div>
                 <div><Label className="text-xs">UF</Label><Input value={form.address_state} onChange={e => updateField('address_state', e.target.value)} className="h-8 text-xs" maxLength={2} /></div>
                 <div><Label className="text-xs">CEP</Label><Input value={form.address_zip} onChange={e => updateField('address_zip', e.target.value)} className="h-8 text-xs" /></div>
+                <div className="col-span-2">
+                  <Label className="text-xs">Tarifa de pesagem personalizada (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.tarifa_pesagem_customizada}
+                    onChange={e => updateField('tarifa_pesagem_customizada', e.target.value)}
+                    className="h-8 text-xs"
+                    placeholder="Deixe em branco para usar a tarifa padrão (R$ 50,00)"
+                  />
+                </div>
                 <div className="col-span-2"><Label className="text-xs">Observações</Label><Textarea value={form.notes} onChange={e => updateField('notes', e.target.value)} className="text-xs min-h-[50px]" /></div>
                 <div className="col-span-2">
                   <Label className="text-xs">QR Code PIX para Fatura</Label>
