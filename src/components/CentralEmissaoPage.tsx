@@ -318,7 +318,6 @@ export function CentralEmissaoPage() {
       material_type: l.classificacao,
       gross_weight: l.peso,
       tare_weight: 0,
-      net_weight: l.peso,
       price_per_kg: price,
       total_value: l.origem.valor,
       status: 'pago',
