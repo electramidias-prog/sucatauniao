@@ -53,6 +53,7 @@ interface Movement {
 export function EstoqueFisicoPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const canEdit = !!user; // any authenticated user can create/edit movements
   const [items, setItems] = useState<StockItem[]>([]);
   const [moves, setMoves] = useState<Movement[]>([]);
   const [loading, setLoading] = useState(true);
