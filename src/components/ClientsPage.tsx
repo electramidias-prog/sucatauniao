@@ -296,6 +296,18 @@ export function ClientsPage() {
                 <div><Label className="text-xs">Cidade</Label><Input value={form.address_city} onChange={e => updateField('address_city', e.target.value)} className="h-8 text-xs" /></div>
                 <div><Label className="text-xs">UF</Label><Input value={form.address_state} onChange={e => updateField('address_state', e.target.value)} className="h-8 text-xs" maxLength={2} /></div>
                 <div><Label className="text-xs">CEP</Label><Input value={form.address_zip} onChange={e => updateField('address_zip', e.target.value)} className="h-8 text-xs" /></div>
+                <div className="col-span-2">
+                  <Label className="text-xs">Tarifa de pesagem personalizada (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.tarifa_pesagem_customizada}
+                    onChange={e => updateField('tarifa_pesagem_customizada', e.target.value)}
+                    className="h-8 text-xs"
+                    placeholder="Deixe em branco para usar a tarifa padrão (R$ 50,00)"
+                  />
+                </div>
                 <div className="col-span-2"><Label className="text-xs">Observações</Label><Textarea value={form.notes} onChange={e => updateField('notes', e.target.value)} className="text-xs min-h-[50px]" /></div>
                 <div className="col-span-2">
                   <Label className="text-xs">QR Code PIX para Fatura</Label>
