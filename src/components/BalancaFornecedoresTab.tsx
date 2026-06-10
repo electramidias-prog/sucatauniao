@@ -1062,6 +1062,61 @@ Obrigado pela parceria! ✅`;
       </Dialog>
 
       <PhotoViewDialog url={viewPhotoUrl} onClose={() => setViewPhotoUrl(null)} />
+
+      {/* ═══════ POST-FINALIZE WHATSAPP DIALOG ═══════ */}
+      <Dialog open={!!finalizedDialog} onOpenChange={(o) => { if (!o) setFinalizedDialog(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-700">
+              <CheckCircle2 className="h-5 w-5" /> Ticket #{finalizedDialog?.ticket.ticket_number} finalizado
+            </DialogTitle>
+          </DialogHeader>
+          {finalizedDialog && (
+            <div className="space-y-3 text-sm">
+              <p>Comprovante pronto. Clique abaixo para baixar o PDF e enviar pelo WhatsApp.</p>
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                onClick={async () => {
+                  await sendTicketWhatsapp(finalizedDialog.ticket, finalizedDialog.fractions);
+                }}
+              >
+                📲 Enviar comprovante no WhatsApp
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={async () => {
+                  const data = ticketPdfData(finalizedDialog.ticket, finalizedDialog.fractions);
+                  const doc = await buildTicketPdf(data);
+                  doc.save(ticketPdfFilename(data));
+                }}
+              >
+                Apenas baixar PDF
+              </Button>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setFinalizedDialog(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══════ WHATSAPP FALLBACK (sem telefone) ═══════ */}
+      <Dialog open={!!waFallback} onOpenChange={(o) => { if (!o) setWaFallback(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cliente sem telefone</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Cliente sem telefone cadastrado — copie a mensagem abaixo para enviar manualmente.
+          </p>
+          <Textarea rows={12} readOnly value={waFallback || ''} className="text-xs font-mono" />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { navigator.clipboard.writeText(waFallback || ''); toast.success('Mensagem copiada'); }}>Copiar</Button>
+            <Button onClick={() => setWaFallback(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
