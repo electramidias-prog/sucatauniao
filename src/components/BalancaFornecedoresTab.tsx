@@ -28,7 +28,9 @@ import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { RefreshButton } from '@/components/RefreshButton';
 import { PhotoField } from './balanca/PhotoField';
 import { PhotoThumb, PhotoViewDialog } from './balanca/PhotoViewDialog';
-import { buildTicketPdf, buildWhatsappMessage, ticketPdfFilename, type TicketPdfData } from './balanca/TicketPdf';
+import { buildWhatsappMessage, type TicketPdfData } from './balanca/TicketPdf';
+import { baixarTicketPNG, imprimirTicket } from '@/hooks/useTicketImagem';
+import type { TicketDados } from './TicketComprovante';
 import { logAudit } from './balanca/auditLog';
 
 // ───────── Types ─────────
@@ -485,7 +487,12 @@ export function BalancaFornecedoresTab() {
   };
 
   // ───────── Print / WhatsApp ─────────
-  const handlePrint = () => window.print();
+  const handlePrint = async () => {
+    if (!viewTicket) return;
+    const dados = ticketDadosImagem(viewTicket, viewFractions);
+    try { await imprimirTicket(dados); }
+    catch (e) { console.error(e); toast.error('Erro ao gerar imagem para impressão'); }
+  };
 
   const ticketPdfData = (t: Weighing, fracs: Fraction[]): TicketPdfData => ({
     ticket_number: t.ticket_number,
@@ -505,18 +512,42 @@ export function BalancaFornecedoresTab() {
     })),
   });
 
+  const ticketDadosImagem = (t: Weighing, fracs: Fraction[]): TicketDados => {
+    const totalKg = fracs.reduce((s, f) => s + Number(f.final_weight || 0), 0);
+    const totalValor = fracs.reduce((s, f) => s + Number(f.subtotal || 0), 0);
+    return {
+      tipo: 'fornecedor',
+      numero: t.ticket_number,
+      clienteNome: t.clients?.name || '—',
+      clienteDoc: t.clients?.document_number || '',
+      placa: t.vehicle_plate,
+      dataHora: new Date().toISOString(),
+      fotoUrl: t.photo_url,
+      materiais: fracs.map((f) => ({
+        material: matLabel(f.material_type),
+        bruto: Number(f.previous_weight || 0),
+        tara: Number(f.current_tare || 0),
+        desconto: Math.max(0, Number(f.net_weight || 0) - Number(f.final_weight || 0)),
+        final: Number(f.final_weight || 0),
+        precoKg: Number(f.price_per_kg || 0),
+        subtotal: Number(f.subtotal || 0),
+      })),
+      totalKg,
+      totalValor,
+    };
+  };
+
   const sendTicketWhatsapp = async (t: Weighing, fracs: Fraction[]) => {
     if (fracs.length === 0) { toast.error('Ticket sem descargas'); return; }
-    const data = ticketPdfData(t, fracs);
+    const dadosImg = ticketDadosImagem(t, fracs);
     try {
-      const doc = await buildTicketPdf(data);
-      doc.save(ticketPdfFilename(data));
+      await baixarTicketPNG(dadosImg, { auditTable: 'weighings', auditRecordId: t.id });
     } catch (err) {
       console.error(err);
-      toast.error('Erro ao gerar PDF');
+      toast.error('Erro ao gerar imagem do comprovante');
       return;
     }
-    const msg = buildWhatsappMessage(data);
+    const msg = buildWhatsappMessage(ticketPdfData(t, fracs));
     const phone = (t.clients?.whatsapp || t.clients?.phone || '').replace(/\D/g, '');
     if (!phone) {
       setWaFallback(msg);
