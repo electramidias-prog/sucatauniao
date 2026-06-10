@@ -145,6 +145,58 @@ export function PesagensPagasTab() {
   );
 }
 
+// ─────────── PNG / WhatsApp helpers ───────────
+function buildPagaTicketDados(t: PaidWeighing): TicketDados {
+  const tarifa = Number(t.tarifa_aplicada ?? t.total_amount ?? 0);
+  return {
+    tipo: 'paga',
+    numero: t.id.slice(0, 8).toUpperCase(),
+    clienteNome: t.clients?.name || 'Avulsa',
+    clienteDoc: t.clients?.document_number || '',
+    placa: t.vehicle_plate,
+    dataHora: t.exit_at || t.entry_at,
+    fotoUrl: t.photo_url,
+    pesoEntrada: Number(t.gross_weight || 0),
+    pesoSaida: Number(t.tare_weight || 0),
+    pesoLiquido: Number(t.net_weight || 0),
+    tarifa,
+    tarifaOrigem: t.tarifa_origem,
+    pagamento: t.payment_status,
+  };
+}
+
+export async function sendPagaWhatsapp(t: PaidWeighing) {
+  const dados = buildPagaTicketDados(t);
+  try {
+    await baixarTicketPNG(dados, { auditTable: 'paid_weighings', auditRecordId: t.id });
+  } catch (e) {
+    console.error(e);
+    toast.error('Erro ao gerar imagem');
+    return;
+  }
+  const phone = (t.clients?.whatsapp || t.clients?.phone || '').replace(/\D/g, '');
+  const msg = montarMensagemWhatsappPaga({
+    numero: dados.numero,
+    clienteNome: dados.clienteNome,
+    dataHora: dados.dataHora,
+    placa: t.vehicle_plate,
+    pesoLiquido: Number(dados.pesoLiquido || 0),
+    tarifa: Number(dados.tarifa || 0),
+  });
+  if (!phone) {
+    try { await navigator.clipboard.writeText(msg); } catch { /* noop */ }
+    toast.message('Cliente sem telefone', { description: 'Mensagem copiada para a área de transferência.' });
+    return;
+  }
+  window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  await logAudit({
+    table: 'paid_weighings',
+    recordId: t.id,
+    action: 'UPDATE',
+    newValue: { audit_action: 'WHATSAPP_SENT' },
+  });
+}
+
 function Stat({ icon, label, value, positive, danger }: { icon: React.ReactNode; label: string; value: string; positive?: boolean; danger?: boolean }) {
   return (
     <Card>
