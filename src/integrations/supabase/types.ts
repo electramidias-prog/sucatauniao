@@ -1880,6 +1880,99 @@ export type Database = {
         }
         Relationships: []
       }
+      transfers: {
+        Row: {
+          adjustment_amount: number
+          adjustment_reason: string | null
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          beneficiary_address: string | null
+          beneficiary_cpf: string | null
+          beneficiary_name: string | null
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          origin: string
+          original_amount: number
+          paid_at: string | null
+          paid_by: string | null
+          payment_method: string | null
+          payment_notes: string | null
+          payment_proof_url: string | null
+          status: string
+          updated_at: string
+          weighing_id: string | null
+        }
+        Insert: {
+          adjustment_amount?: number
+          adjustment_reason?: string | null
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          beneficiary_address?: string | null
+          beneficiary_cpf?: string | null
+          beneficiary_name?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          origin: string
+          original_amount: number
+          paid_at?: string | null
+          paid_by?: string | null
+          payment_method?: string | null
+          payment_notes?: string | null
+          payment_proof_url?: string | null
+          status?: string
+          updated_at?: string
+          weighing_id?: string | null
+        }
+        Update: {
+          adjustment_amount?: number
+          adjustment_reason?: string | null
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          beneficiary_address?: string | null
+          beneficiary_cpf?: string | null
+          beneficiary_name?: string | null
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          origin?: string
+          original_amount?: number
+          paid_at?: string | null
+          paid_by?: string | null
+          payment_method?: string | null
+          payment_notes?: string | null
+          payment_proof_url?: string | null
+          status?: string
+          updated_at?: string
+          weighing_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfers_weighing_id_fkey"
+            columns: ["weighing_id"]
+            isOneToOne: false
+            referencedRelation: "weighings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
