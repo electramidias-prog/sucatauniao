@@ -1,0 +1,1 @@
+ALTER TABLE public.paid_weighings ADD COLUMN IF NOT EXISTS photo_url text;
