@@ -65,7 +65,7 @@ const EMPTY_FORM = {
   email: '', phone: '', whatsapp: '', vehicle_plate: '',
   address_street: '', address_number: '', address_complement: '',
   address_neighborhood: '', address_city: '', address_state: 'MG', address_zip: '',
-  client_type: 'fornecedor', status: 'ativo', operational_status: 'normal',
+  client_type: '', status: 'ativo', operational_status: 'normal',
   notes: '', negotiation_history: '', qr_code_url: '',
 };
 
@@ -157,6 +157,8 @@ export function ClientsPage() {
   const handleSave = async () => {
     if (!form.name || !form.document_number) { toast.error('Nome e CPF/CNPJ são obrigatórios'); return; }
     const payload: Record<string, unknown> = { ...form, created_by: user?.id };
+    // treat empty client_type as 'nao_informado' before nullifying empty strings
+    if (!payload.client_type) payload.client_type = 'nao_informado';
     // remove empty strings
     Object.keys(payload).forEach(k => { if (payload[k] === '') payload[k] = null; });
     payload.name = form.name;
@@ -264,14 +266,13 @@ export function ClientsPage() {
                 <div><Label className="text-xs">Data Nasc.</Label><Input type="date" value={form.birth_date} onChange={e => updateField('birth_date', e.target.value)} className="h-8 text-xs" /></div>
                 <div><Label className="text-xs">Placa Veículo</Label><Input value={form.vehicle_plate} onChange={e => updateField('vehicle_plate', e.target.value)} className="h-8 text-xs" placeholder="ABC-1234" /></div>
                 <div><Label className="text-xs">Tipo Cliente</Label>
-                  <Select value={form.client_type} onValueChange={v => updateField('client_type', v)}>
-                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                  <Select value={form.client_type || ''} onValueChange={v => updateField('client_type', v)}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Selecione o tipo" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="fornecedor">Fornecedor</SelectItem>
-                      <SelectItem value="pesagem_avulsa">Pesagem Avulsa</SelectItem>
-                      <SelectItem value="coleta_agendada">Coleta Agendada</SelectItem>
-                      <SelectItem value="envio">Envio</SelectItem>
-                      <SelectItem value="doacao">Doação</SelectItem>
+                      <SelectItem value="cliente">Cliente</SelectItem>
+                      <SelectItem value="ambos">Ambos</SelectItem>
+                      <SelectItem value="nao_informado">Não informado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
