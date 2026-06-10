@@ -319,7 +319,6 @@ export function CentralEmissaoPage() {
       gross_weight: l.peso,
       tare_weight: 0,
       price_per_kg: price,
-      total_value: l.origem.valor,
       status: 'pago',
       notes: `Importado SICOOB ${dataBR(l.origem.data)}`,
       created_by: user?.id ?? null,

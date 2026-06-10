@@ -271,7 +271,6 @@ export function BalancaFornecedoresTab() {
           gross_weight: gross,
           tare_weight: 0,
           total_weight: 0,
-          total_value: 0,
           price_per_kg: 0,
           status: 'em_aberto',
           notes: ticketNotes || null,
@@ -393,7 +392,6 @@ export function BalancaFornecedoresTab() {
       .update({
         status: 'concluido',
         total_weight: totalWeight,
-        total_value: totalValue,
         final_net_weight: totalWeight,
         tare_weight: lastTare,
         material_type: 'multiplo',
