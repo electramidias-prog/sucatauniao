@@ -161,6 +161,11 @@ export function ClientsPage() {
     const payload: Record<string, unknown> = { ...form, created_by: user?.id };
     // treat empty client_type as 'nao_informado' before nullifying empty strings
     if (!payload.client_type) payload.client_type = 'nao_informado';
+    // numeric tarifa
+    if (typeof payload.tarifa_pesagem_customizada === 'string') {
+      const s = (payload.tarifa_pesagem_customizada as string).trim();
+      payload.tarifa_pesagem_customizada = s === '' ? null : Number(s.replace(',', '.'));
+    }
     // remove empty strings
     Object.keys(payload).forEach(k => { if (payload[k] === '') payload[k] = null; });
     payload.name = form.name;
