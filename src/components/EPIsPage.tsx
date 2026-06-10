@@ -185,7 +185,7 @@ async function generateReceiptPdf(opts: {
 export function EPIsPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
-  const canManage = isAdmin || user?.role === 'financeiro';
+  const canManage = !!user;
 
   const [epis, setEpis] = useState<EPI[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);

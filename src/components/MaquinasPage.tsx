@@ -42,7 +42,8 @@ function statusOf(eq: Equipment): { label: string; color: string } {
 
 export function MaquinasPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'financeiro';
+  const isAdmin = user?.role === 'admin';
+  const canManage = !!user;
   const [tab, setTab] = useState('equipamentos');
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);

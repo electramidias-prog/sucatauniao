@@ -73,6 +73,7 @@ function statusFor(expiry: string | null) {
 export function DocumentosPage() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
+  const canEdit = !!user;
   const [docs, setDocs] = useState<Doc[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);

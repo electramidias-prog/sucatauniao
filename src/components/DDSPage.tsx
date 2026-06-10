@@ -28,7 +28,8 @@ const REASONS = ['Incidente','Mudança Operacional','Novo Equipamento','Alerta d
 
 export function DDSPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin' || user?.role === 'financeiro';
+  const isAdmin = user?.role === 'admin';
+  const canManage = !!user;
 
   const [mode, setMode] = useState<Mode | null>(null);
   const [themes, setThemes] = useState<Theme[]>([]);
