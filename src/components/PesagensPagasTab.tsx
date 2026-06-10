@@ -19,6 +19,7 @@ import { ExportButton } from './balanca/exportTable';
 import { logAudit } from './balanca/auditLog';
 import { PhotoField } from './balanca/PhotoField';
 import { PhotoThumb, PhotoViewDialog } from './balanca/PhotoViewDialog';
+import { getTarifaPesagem, type TarifaPesagem } from '@/lib/tarifaPesagem';
 
 interface PaidWeighing {
   id: string;
@@ -33,8 +34,9 @@ interface PaidWeighing {
   status: 'em_aberto' | 'finalizado' | 'encerrado_automatico' | 'reaberto';
   payment_status: 'pago' | 'nao_pago';
   payment_at: string | null;
-  price_per_kg: number | null;
   total_amount: number | null;
+  tarifa_aplicada: number | null;
+  tarifa_origem: 'global' | 'customizada' | null;
   notes: string | null;
   invoice_id: string | null;
   photo_url: string | null;
