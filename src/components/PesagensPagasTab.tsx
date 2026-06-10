@@ -683,7 +683,10 @@ function FinalizedTable({ title, items, onViewPhoto }: { title: string; items: P
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>{headers.map(h => <TableHead key={h} className="text-xs">{h}</TableHead>)}</TableRow>
+                <TableRow>
+                  {headers.map(h => <TableHead key={h} className="text-xs">{h}</TableHead>)}
+                  <TableHead className="text-xs">Ações</TableHead>
+                </TableRow>
               </TableHeader>
               <TableBody>
                 {items.map(t => (
