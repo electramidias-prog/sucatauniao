@@ -30,7 +30,6 @@ import { PhotoField } from './balanca/PhotoField';
 import { PhotoThumb, PhotoViewDialog } from './balanca/PhotoViewDialog';
 import { buildTicketPdf, buildWhatsappMessage, ticketPdfFilename, type TicketPdfData } from './balanca/TicketPdf';
 import { logAudit } from './balanca/auditLog';
-import { Textarea as TxtArea } from '@/components/ui/textarea';
 
 // ───────── Types ─────────
 interface Client {
@@ -696,9 +695,22 @@ Obrigado pela parceria! ✅`;
                       <TableCell className="text-xs text-muted-foreground">{fmtDateTime(w.created_at)}</TableCell>
                       <TableCell><PhotoThumb url={w.photo_url} onOpen={setViewPhotoUrl} /></TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" onClick={() => handleViewTicket(w)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleViewTicket(w)} title="Visualizar">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {w.status === 'concluido' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs border-green-600 text-green-700 hover:bg-green-50"
+                              onClick={() => sendTicketWhatsapp(w, fractionsByWeighing[w.id] || [])}
+                              title="Enviar comprovante no WhatsApp"
+                            >
+                              📲 WhatsApp
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
