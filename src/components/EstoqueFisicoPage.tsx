@@ -144,7 +144,7 @@ export function EstoqueFisicoPage() {
   }
 
   async function submitAdjust() {
-    if (!user || !isAdmin) return;
+    if (!user) return;
     const qty = parseFloat(aj.quantity);
     if (!qty || qty <= 0) { toast({ title: 'Quantidade inválida', variant: 'destructive' }); return; }
     const signed = aj.kind === 'add' ? qty : -qty;
@@ -197,7 +197,7 @@ export function EstoqueFisicoPage() {
         </div>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={() => setExitOpen(true)}><Truck className="h-4 w-4 mr-1" />Registrar Saída</Button>
-          {isAdmin && <Button size="sm" variant="outline" onClick={() => setAdjOpen(true)}><Settings className="h-4 w-4 mr-1" />Ajuste Manual</Button>}
+          <Button size="sm" variant="outline" onClick={() => setAdjOpen(true)}><Settings className="h-4 w-4 mr-1" />Ajuste Manual</Button>
         </div>
       </div>
 
