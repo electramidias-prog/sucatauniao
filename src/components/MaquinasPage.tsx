@@ -132,7 +132,7 @@ export function MaquinasPage() {
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome, placa ou série..." className="pl-8" />
             </div>
-            {isAdmin && <Button onClick={() => setEqModal({ open: true })}><Plus className="h-4 w-4 mr-1" />Novo Equipamento</Button>}
+            {canManage && <Button onClick={() => setEqModal({ open: true })}><Plus className="h-4 w-4 mr-1" />Novo Equipamento</Button>}
           </div>
 
           <Card className="overflow-x-auto">
@@ -167,7 +167,7 @@ export function MaquinasPage() {
                       <td className="p-2 text-xs">{e.inmetro_expiry || '-'}</td>
                       <td className="p-2 text-xs">{e.last_checklist_at ? new Date(e.last_checklist_at).toLocaleDateString('pt-BR') : '-'}</td>
                       <td className="p-2">
-                        {isAdmin && <Button size="sm" variant="ghost" onClick={() => setEqModal({ open: true, data: e })}><Pencil className="h-3 w-3" /></Button>}
+                        {canManage && <Button size="sm" variant="ghost" onClick={() => setEqModal({ open: true, data: e })}><Pencil className="h-3 w-3" /></Button>}
                       </td>
                     </tr>
                   );
@@ -188,7 +188,7 @@ export function MaquinasPage() {
               <TabsTrigger value="registros">Registros</TabsTrigger>
             </TabsList>
             <TabsContent value="modelos" className="space-y-3">
-              <div className="flex justify-end">{isAdmin && <Button onClick={() => setTmplModal({ open: true })}><Plus className="h-4 w-4 mr-1" />Novo Modelo</Button>}</div>
+              <div className="flex justify-end">{canManage && <Button onClick={() => setTmplModal({ open: true })}><Plus className="h-4 w-4 mr-1" />Novo Modelo</Button>}</div>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {templates.map((t) => (
                   <Card key={t.id} className="p-3">
@@ -197,7 +197,7 @@ export function MaquinasPage() {
                         <div className="font-semibold">{t.name}</div>
                         <div className="text-xs text-muted-foreground mt-1">{(t.equipment_types || []).join(', ')}</div>
                       </div>
-                      {isAdmin && <Button size="sm" variant="ghost" onClick={() => setTmplModal({ open: true, data: t })}><Pencil className="h-3 w-3" /></Button>}
+                      {canManage && <Button size="sm" variant="ghost" onClick={() => setTmplModal({ open: true, data: t })}><Pencil className="h-3 w-3" /></Button>}
                     </div>
                     <ul className="mt-2 text-xs space-y-1 text-muted-foreground">
                       {(t.items || []).slice(0, 5).map((it: any, i: number) => <li key={i}>• {it.text}</li>)}
@@ -254,7 +254,7 @@ export function MaquinasPage() {
               <div className="text-xs text-muted-foreground">Custo de Manutenção no Mês</div>
               <div className="text-2xl font-bold">R$ {monthMaintCost.toFixed(2)}</div>
             </Card>
-            {isAdmin && <Button onClick={() => setMaintModal({ open: true })}><Plus className="h-4 w-4 mr-1" />Registrar Manutenção</Button>}
+            {canManage && <Button onClick={() => setMaintModal({ open: true })}><Plus className="h-4 w-4 mr-1" />Registrar Manutenção</Button>}
           </div>
           <Card className="overflow-x-auto">
             <table className="w-full text-sm">
