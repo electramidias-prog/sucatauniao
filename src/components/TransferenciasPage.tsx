@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   ArrowLeftRight, Plus, CheckCircle2, DollarSign, Edit3, Download, FileText,
-  Upload, X, Eye, Image as ImageIcon,
+  Upload, X, Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { logAudit } from './balanca/auditLog';
