@@ -1129,7 +1129,7 @@ Obrigado pela parceria! ✅`;
           </DialogHeader>
           {finalizedDialog && (
             <div className="space-y-3 text-sm">
-              <p>Comprovante pronto. Clique abaixo para baixar o PDF e enviar pelo WhatsApp.</p>
+              <p>Comprovante pronto. Clique abaixo para baixar a imagem e enviar pelo WhatsApp.</p>
               <Button
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
                 onClick={async () => {
