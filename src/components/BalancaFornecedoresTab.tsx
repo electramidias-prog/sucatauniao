@@ -418,6 +418,31 @@ export function BalancaFornecedoresTab() {
       created_by: user?.id || null,
     });
     if (txErr) console.warn('client_transactions insert failed', txErr);
+
+    // Auto-create transfer (Em Aberto) for finalized ticket
+    try {
+      const { data: tr, error: trErr } = await supabase
+        .from('transfers')
+        .insert({
+          origin: 'ticket',
+          weighing_id: w.id,
+          client_id: w.client_id,
+          amount: totalValue,
+          original_amount: totalValue,
+          status: 'em_aberto',
+          created_by: user?.id || null,
+          description: `Ticket #${w.ticket_number}`,
+        } as any)
+        .select('id')
+        .single();
+      if (trErr) console.warn('transfer insert failed', trErr);
+      else if (tr) {
+        await logAudit({ table: 'transfers', recordId: tr.id, action: 'INSERT', newValue: { audit_action: 'TRANSFER_CREATED', weighing_id: w.id, amount: totalValue } });
+      }
+    } catch (e) {
+      console.warn('transfer creation error', e);
+    }
+
     return true;
   };
 
