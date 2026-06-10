@@ -441,7 +441,7 @@ function NewCadastradaDialog({
   const [plate, setPlate] = useState('');
   const [gross, setGross] = useState('');
   const [tare, setTare] = useState('');
-  const [price, setPrice] = useState('');
+  const [tarifa, setTarifa] = useState<TarifaPesagem | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -454,21 +454,22 @@ function NewCadastradaDialog({
         .maybeSingle();
       if (data) setTare(String((data as any).tare_weight ?? ''));
     })();
+    getTarifaPesagem(client.id).then(setTarifa);
   }, [client.id]);
 
   const submit = async () => {
-    if (!plate || !gross || !price) {
-      toast.error('Preencha placa, peso e preço');
+    if (!plate || !gross) {
+      toast.error('Preencha placa e peso');
       return;
     }
     setBusy(true);
+    const t = tarifa ?? await getTarifaPesagem(client.id);
     const payload = {
       type: 'cadastrada' as const,
       client_id: client.id,
       vehicle_plate: plate.toUpperCase(),
       gross_weight: Number(gross),
       tare_weight: tare ? Number(tare) : null,
-      price_per_kg: Number(price),
       photo_url: photoUrl || null,
     };
     const { data, error } = await supabase.from('paid_weighings').insert(payload as any).select().single();
@@ -477,7 +478,7 @@ function NewCadastradaDialog({
       toast.error(error?.message || 'Erro');
       return;
     }
-    await logAudit({ table: 'paid_weighings', recordId: (data as any).id, action: 'INSERT', newValue: payload });
+    await logAudit({ table: 'paid_weighings', recordId: (data as any).id, action: 'INSERT', newValue: { ...payload, tarifa_prevista: t.valor, tarifa_origem: t.origem } });
     toast.success('Entrada registrada');
     printReceipt({
       ticketId: (data as any).id,
@@ -488,7 +489,8 @@ function NewCadastradaDialog({
       entryAt: (data as any).entry_at,
       grossWeight: Number(gross),
       tareWeight: tare ? Number(tare) : null,
-      pricePerKg: Number(price),
+      tarifa: t.valor,
+      tarifaOrigem: t.origem,
       paymentStatus: 'nao_pago',
     });
     onDone();
@@ -503,7 +505,10 @@ function NewCadastradaDialog({
           <div className="col-span-2"><Label className="text-xs">Placa</Label><Input value={plate} onChange={e => setPlate(e.target.value.toUpperCase())} /></div>
           <div><Label className="text-xs">Peso Entrada (kg)</Label><Input type="number" step="0.001" value={gross} onChange={e => setGross(e.target.value)} /></div>
           <div><Label className="text-xs">Tara (kg)</Label><Input type="number" step="0.001" value={tare} onChange={e => setTare(e.target.value)} /></div>
-          <div><Label className="text-xs">Preço/kg (R$)</Label><Input type="number" step="0.0001" value={price} onChange={e => setPrice(e.target.value)} /></div>
+          <div className="col-span-2">
+            <Label className="text-xs">Tarifa do ciclo</Label>
+            <TarifaBadge tarifa={tarifa} />
+          </div>
           <div className="col-span-2">
             <Label className="text-xs">Foto da carga (opcional)</Label>
             <PhotoField value={photoUrl} onChange={setPhotoUrl} folder="paid-cadastrada" />
