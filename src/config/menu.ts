@@ -39,6 +39,7 @@ export const menuSections: MenuSection[] = [
     items: [
       { label: 'Clientes', iconName: 'Users', path: '/clientes', roles: ALL_ROLES },
       { label: 'Conta Corrente', iconName: 'Wallet', path: '/conta-corrente', roles: ALL_ROLES },
+      { label: 'Transferências', iconName: 'ArrowLeftRight', path: '/transferencias', roles: ALL_ROLES },
       { label: 'Contas a Pagar', iconName: 'Wallet', path: '/contas-pagar', roles: ALL_ROLES },
       { label: 'Faturamento', iconName: 'FileText', path: '/faturamento', roles: ALL_ROLES },
     ],
