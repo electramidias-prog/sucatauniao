@@ -15,6 +15,8 @@ import { ReopenTicketDialog } from './balanca/ReopenTicketDialog';
 import { DefaultTareDialog } from './balanca/DefaultTareDialog';
 import { GenerateInvoiceDialog } from './balanca/GenerateInvoiceDialog';
 import { printReceipt } from './balanca/ThermalReceipt';
+import { baixarTicketPNG, imprimirTicket, montarMensagemWhatsappPaga } from '@/hooks/useTicketImagem';
+import type { TicketDados } from './TicketComprovante';
 import { ExportButton } from './balanca/exportTable';
 import { logAudit } from './balanca/auditLog';
 import { PhotoField } from './balanca/PhotoField';
@@ -40,7 +42,7 @@ interface PaidWeighing {
   notes: string | null;
   invoice_id: string | null;
   photo_url: string | null;
-  clients?: { name: string; document_number: string } | null;
+  clients?: { name: string; document_number: string; phone?: string | null; whatsapp?: string | null } | null;
 }
 
 const fmtKg = (n: number | null | undefined) =>
@@ -67,7 +69,7 @@ export function PesagensPagasTab() {
   const load = useCallback(async () => {
     const { data, error } = await supabase
       .from('paid_weighings')
-      .select('*,clients(name,document_number)')
+      .select('*,clients(name,document_number,phone,whatsapp)')
       .order('entry_at', { ascending: false })
       .limit(500);
     if (error) {
