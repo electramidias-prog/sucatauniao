@@ -188,7 +188,9 @@ export async function sendPagaWhatsapp(t: PaidWeighing) {
     toast.message('Cliente sem telefone', { description: 'Mensagem copiada para a área de transferência.' });
     return;
   }
-  window.open(`https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+  const waUrl = `https://web.whatsapp.com/send?phone=55${phone}&text=${encodeURIComponent(msg)}`;
+  const waWin = window.open(waUrl, 'whatsapp_sucata_uniao');
+  try { waWin?.focus(); } catch { /* noop */ }
   await logAudit({
     table: 'paid_weighings',
     recordId: t.id,
