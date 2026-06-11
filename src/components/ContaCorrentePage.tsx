@@ -372,6 +372,7 @@ export function ContaCorrentePage() {
                 <div className="text-center text-xs text-muted-foreground py-6">Nenhum cliente</div>
               ) : filteredClients.map(c => {
                 const aPagar = c.balance > 0;
+                const isDevedor = c.balance < 0;
                 const isSel = c.id === selectedId;
                 return (
                   <button
@@ -386,16 +387,16 @@ export function ContaCorrentePage() {
                         <div className="text-xs font-medium truncate">{c.nickname || c.name}</div>
                         {c.nickname && <div className="text-[10px] text-muted-foreground truncate">{c.name}</div>}
                       </div>
-                      <div className={`text-xs font-mono font-semibold ${aPagar ? 'text-destructive' : 'text-accent'}`}>
+                      <div className={`text-xs font-mono font-semibold ${aPagar ? 'text-red-600' : isDevedor ? 'text-green-600' : 'text-muted-foreground'}`}>
                         {money(c.balance)}
                       </div>
                     </div>
                     <div className="mt-1">
                       {aPagar ? (
-                        <Badge className="text-[9px] bg-destructive text-destructive-foreground">AGUARDANDO PAGAMENTO</Badge>
-                      ) : (
-                        <Badge className="text-[9px] bg-accent text-accent-foreground">DEVEDOR</Badge>
-                      )}
+                        <Badge className="text-[9px] bg-red-100 text-red-700 border border-red-300 hover:bg-red-100">AGUARDANDO PAGAMENTO</Badge>
+                      ) : isDevedor ? (
+                        <Badge className="text-[9px] bg-green-100 text-green-700 border border-green-300 hover:bg-green-100">DEVEDOR</Badge>
+                      ) : null}
                     </div>
                   </button>
                 );
@@ -455,12 +456,14 @@ export function ContaCorrentePage() {
                   </div>
                 </CardContent></Card>
                 <Card><CardContent className="p-3 flex items-center gap-2">
-                  <DollarSign className={`h-7 w-7 ${summary.balance > 0 ? 'text-destructive' : 'text-accent'}`} />
+                  <DollarSign className={`h-7 w-7 ${summary.balance > 0 ? 'text-red-600' : summary.balance < 0 ? 'text-green-600' : 'text-muted-foreground'}`} />
                   <div>
-                    <p className={`text-base font-bold ${summary.balance > 0 ? 'text-destructive' : 'text-accent'}`}>
+                    <p className={`text-base font-bold ${summary.balance > 0 ? 'text-red-600' : summary.balance < 0 ? 'text-green-600' : ''}`}>
                       {money(summary.balance)}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">Saldo Atual</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Saldo Atual {summary.balance > 0 ? '(Aguardando pagamento)' : summary.balance < 0 ? '(Devedor)' : ''}
+                    </p>
                   </div>
                 </CardContent></Card>
                 <Card><CardContent className="p-3 flex items-center gap-2">
