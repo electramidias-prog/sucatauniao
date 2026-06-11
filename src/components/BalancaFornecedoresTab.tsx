@@ -554,8 +554,9 @@ export function BalancaFornecedoresTab() {
       toast.error('Cliente sem telefone cadastrado — copie a mensagem manualmente');
       return;
     }
-    const url = `https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+    const url = `https://web.whatsapp.com/send?phone=55${phone}&text=${encodeURIComponent(msg)}`;
+    const w = window.open(url, 'whatsapp_sucata_uniao');
+    try { w?.focus(); } catch { /* noop */ }
     await logAudit({ table: 'weighings', recordId: t.id, action: 'UPDATE', newValue: { audit_action: 'WHATSAPP_SENT' } });
   };
 
@@ -577,14 +578,18 @@ ${lines.join('\n')}
 *Valor: R$ ${totalValue.toFixed(2)}*
 
 Obrigado pela parceria! ✅`;
-    return `https://wa.me/55${phone}?text=${encodeURIComponent(msg)}`;
+    return `https://web.whatsapp.com/send?phone=55${phone}&text=${encodeURIComponent(msg)}`;
   };
 
   const handleSendWhatsapp = () => {
     if (!viewTicket) return;
     const url = buildWhatsappUrl(viewTicket, viewFractions);
     if (!url) { toast.error('Cliente sem telefone/WhatsApp cadastrado'); return; }
-    window.open(url, '_blank');
+    const w = window.open(url, 'whatsapp_sucata_uniao');
+    try { w?.focus(); } catch { /* noop */ }
+    if (viewTicket) {
+      logAudit({ table: 'weighings', recordId: viewTicket.id, action: 'UPDATE', newValue: { audit_action: 'WHATSAPP_SENT' } });
+    }
   };
 
   // ───────── Render ─────────
