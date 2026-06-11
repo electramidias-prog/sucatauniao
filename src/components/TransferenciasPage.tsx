@@ -209,6 +209,22 @@ export function TransferenciasPage() {
   const [payFor, setPayFor] = useState<Transfer | null>(null);
   const [bulkPayOpen, setBulkPayOpen] = useState(false);
   const [proofView, setProofView] = useState<string | null>(null);
+  const [confirmBulkApprove, setConfirmBulkApprove] = useState(false);
+  const [confirmApproveOne, setConfirmApproveOne] = useState<Transfer | null>(null);
+
+  // Global summary (independent of date filter)
+  const [globalSummary, setGlobalSummary] = useState({ openSum: 0, apprSum: 0, count: 0 });
+  const loadGlobalSummary = useCallback(async () => {
+    const { data } = await supabase
+      .from('transfers')
+      .select('amount,status')
+      .in('status', ['em_aberto', 'aprovado']);
+    const rows = (data as any[]) || [];
+    const openSum = rows.filter(r => r.status === 'em_aberto').reduce((s, r) => s + Number(r.amount || 0), 0);
+    const apprSum = rows.filter(r => r.status === 'aprovado').reduce((s, r) => s + Number(r.amount || 0), 0);
+    const count = rows.filter(r => r.status === 'em_aberto').length;
+    setGlobalSummary({ openSum, apprSum, count });
+  }, []);
 
   // ── Load ──
   const load = useCallback(async () => {
@@ -234,15 +250,16 @@ export function TransferenciasPage() {
   }, [dateFrom, dateTo]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadGlobalSummary(); }, [loadGlobalSummary]);
 
   // Realtime
   useEffect(() => {
     const ch = supabase
       .channel('transfers-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transfers' }, () => load())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transfers' }, () => { load(); loadGlobalSummary(); })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [load]);
+  }, [load, loadGlobalSummary]);
 
   // ── Derived ──
   const openItems = useMemo(
@@ -261,15 +278,7 @@ export function TransferenciasPage() {
     return xs;
   }, [transfers, historyClientFilter, historyMethodFilter]);
 
-  const summary = useMemo(() => {
-    const open = openItems.filter((t) => t.status === 'em_aberto');
-    const appr = openItems.filter((t) => t.status === 'aprovado');
-    return {
-      openSum: open.reduce((s, t) => s + Number(t.amount), 0),
-      apprSum: appr.reduce((s, t) => s + Number(t.amount), 0),
-      count: openItems.length,
-    };
-  }, [openItems]);
+  const summary = globalSummary;
 
   // ── Actions ──
   const supplierName = (t: Transfer) => t.clients?.name || t.beneficiary_name || '—';
@@ -281,10 +290,10 @@ export function TransferenciasPage() {
       .update({ status: 'aprovado', approved_at: new Date().toISOString(), approved_by: user!.id })
       .eq('id', t.id);
     if (error) { toast.error('Erro ao aprovar'); return; }
-    await logAudit({ table: 'transfers', recordId: t.id, action: 'UPDATE', oldValue: { status: t.status }, newValue: { status: 'aprovado', audit_action: 'TRANSFER_APPROVED' } });
+    await logAudit({ table: 'transfers', recordId: t.id, action: 'UPDATE', oldValue: { status: 'em_aberto' }, newValue: { status: 'aprovado', audit_action: 'TRANSFER_APPROVED' } });
     toast.success('Aprovada');
     setSelected((s) => { const n = new Set(s); n.delete(t.id); return n; });
-    load();
+    load(); loadGlobalSummary();
   };
 
   const approveBulk = async () => {
@@ -300,11 +309,11 @@ export function TransferenciasPage() {
       .in('id', ids);
     if (error) { toast.error('Erro no lote'); return; }
     for (const id of ids) {
-      await logAudit({ table: 'transfers', recordId: id, action: 'UPDATE', newValue: { status: 'aprovado', audit_action: 'TRANSFER_APPROVED_BULK' } });
+      await logAudit({ table: 'transfers', recordId: id, action: 'UPDATE', oldValue: { status: 'em_aberto' }, newValue: { status: 'aprovado', audit_action: 'TRANSFER_APPROVED' } });
     }
     toast.success(`${ids.length} aprovada(s)`);
     setSelected(new Set());
-    load();
+    load(); loadGlobalSummary();
   };
 
   // ── Render ──
@@ -357,7 +366,7 @@ export function TransferenciasPage() {
             <div className="flex items-center gap-2 bg-muted/40 border rounded p-2">
               <span className="text-xs">{selected.size} selecionada(s)</span>
               {isAdmin && (
-                <Button size="sm" variant="outline" onClick={approveBulk} className="gap-1">
+                <Button size="sm" variant="outline" onClick={() => setConfirmBulkApprove(true)} className="gap-1">
                   <CheckCircle2 className="h-3 w-3" /> Aprovar Selecionadas
                 </Button>
               )}
@@ -419,7 +428,7 @@ export function TransferenciasPage() {
                     <td className="p-1.5">{fmtDate(t.created_at)}</td>
                     <td className="p-1.5 text-right whitespace-nowrap">
                       {isAdmin && t.status === 'em_aberto' && (
-                        <Button size="sm" variant="outline" className="h-7 px-2 mr-1" onClick={() => approveOne(t)}>
+                        <Button size="sm" variant="outline" className="h-7 px-2 mr-1" onClick={() => setConfirmApproveOne(t)}>
                           <CheckCircle2 className="h-3 w-3 mr-1" />Aprovar
                         </Button>
                       )}
@@ -526,6 +535,38 @@ export function TransferenciasPage() {
         userId={user?.id}
       />
       <ProofViewerDialog url={proofView} open={!!proofView} onClose={() => setProofView(null)} />
+
+      {/* Confirm bulk approve */}
+      <Dialog open={confirmBulkApprove} onOpenChange={(o) => { if (!o) setConfirmBulkApprove(false); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Aprovar transferências</DialogTitle>
+            <DialogDescription>
+              Aprovar {Array.from(selected).filter((id) => transfers.find((x) => x.id === id)?.status === 'em_aberto').length} transferência(s) selecionada(s)?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmBulkApprove(false)}>Cancelar</Button>
+            <Button onClick={async () => { setConfirmBulkApprove(false); await approveBulk(); }}>Aprovar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm single approve */}
+      <Dialog open={!!confirmApproveOne} onOpenChange={(o) => { if (!o) setConfirmApproveOne(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Aprovar transferência</DialogTitle>
+            <DialogDescription>
+              Confirmar aprovação de {confirmApproveOne ? supplierName(confirmApproveOne) : ''} no valor de {confirmApproveOne ? fmtBRL(Number(confirmApproveOne.amount)) : ''}?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmApproveOne(null)}>Cancelar</Button>
+            <Button onClick={async () => { const t = confirmApproveOne!; setConfirmApproveOne(null); await approveOne(t); }}>Aprovar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
